@@ -1,0 +1,24 @@
+[project]
+name = "readbot"
+version = "0.0.0"
+description = "Readbot 看板（Flask + Vue 3）—— 讀書機器人 plugin 的框架骨架"
+requires-python = ">=3.9"
+dependencies = [
+    "flask>=3.0",
+    "numpy>=2.0.2",
+    "pillow>=11.3.0",
+    "pymupdf>=1.26.5",
+]
+
+[dependency-groups]
+# 開發用工具（uv sync 會自動安裝 dev 群組）
+dev = ["ruff>=0.6"]
+
+[tool.uv]
+# Application (flat scripts), not an installable package — uv 只管 venv + deps，不建置本專案
+package = false
+
+[tool.ruff]
+# 對齊現有風格：Python 4 空格、目標 3.9
+target-version = "py39"
+line-length = 120

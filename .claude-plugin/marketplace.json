@@ -1,0 +1,17 @@
+{
+  "name": "readbot",
+  "owner": {
+    "name": "Allen Chen"
+  },
+  "metadata": {
+    "description": "Readbot — 讀書機器人 plugin（框架骨架）",
+    "version": "0.0.0"
+  },
+  "plugins": [
+    {
+      "name": "readbot",
+      "description": "把 Claude Code 變成讀書機器人：自動翻譯書籍、整理重點、產學習小卡。目前為框架骨架。",
+      "source": "./"
+    }
+  ]
+}

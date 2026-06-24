@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Readbot · 讀書機器人看板</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { fontFamily: { sans: ["Inter", "system-ui", "sans-serif"] } } } };
+</script>
+<script src="https://unpkg.com/vue@3.4.27/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- highlight.js：程式碼語法上色（atom-one-dark，Sublime/編輯器風暗色主題）；換主題只要換這個 css 連結 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<!-- KaTeX：渲染 markdown/ipynb 裡的 LaTeX 數學式（renderMd 在 marked 後用 katex.renderToString 還原） -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="frontend/theme.css" />
+<link rel="stylesheet" href="frontend/styles.css" />
+</head>
+<body>
+
+<!-- 氛圍背景 -->
+<div class="ds-ambient" aria-hidden="true">
+  <div class="ds-blob ds-blob--1"></div>
+  <div class="ds-blob ds-blob--2"></div>
+  <div class="ds-blob ds-blob--3"></div>
+</div>
+
+<div id="app" class="ds-app" v-cloak>
+
+  <!-- HEADER -->
+  <header class="relative border-b border-white/[0.06] overflow-hidden">
+    <nav class="relative z-10 max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="grid place-items-center w-8 h-8 rounded-lg text-white font-bold text-sm shrink-0"
+              style="background: linear-gradient(135deg, var(--accent), var(--accent-bright));">R</span>
+        <span class="ds-title font-semibold tracking-tight">Readbot</span>
+      </div>
+      <span class="ds-muted text-xs">讀書機器人看板 · 檢視 · 建書</span>
+    </nav>
+    <div class="relative z-10 max-w-3xl mx-auto px-6 pt-8 pb-10 text-center">
+      <span class="ds-badge inline-flex items-center gap-2 mb-5">
+        <span class="w-1.5 h-1.5 rounded-full" style="background: var(--accent-bright); box-shadow: 0 0 8px var(--accent-bright);"></span>
+        翻譯・重點・學習小卡
+      </span>
+      <h1 class="text-3xl sm:text-4xl font-bold leading-[1.15] tracking-tight">
+        看你的書，翻成<span class="bg-clip-text text-transparent"
+              style="background-image: linear-gradient(100deg, #8e98ec, #aab1ff);">你的語言</span>
+      </h1>
+      <p class="text-sm mt-4 max-w-xl mx-auto leading-relaxed ds-muted">
+        看板只負責<b style="color:var(--fg);">檢視</b>——數位化、翻譯、重點整理都在對話裡用
+        <code style="color:var(--fg);">/readbot:digitize-book</code> 叫 Claude 做。
+      </p>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-6 py-8">
+
+    <!-- 頂列：開書庫 ＋ 目前書名 -->
+    <div class="flex items-center gap-3 mb-5">
+      <button @click="libraryOpen = true" class="ds-btn ds-btn--secondary text-sm px-3 py-1.5">📚 書庫</button>
+      <span v-if="book" class="ds-muted text-sm truncate">目前：<b style="color: var(--fg);">{{ book.title }}</b></span>
+    </div>
+
+    <section>
+        <div v-if="loadingBook" class="ds-muted py-16 text-center">載入中…</div>
+
+        <div v-else-if="!book" class="ds-card p-12 text-center ds-muted leading-relaxed">
+          從書庫選一本書開始。<br />
+          <button @click="libraryOpen = true" class="ds-btn ds-btn--primary text-sm px-4 py-2 mt-4">📚 開啟書庫</button>
+        </div>
+
+        <template v-else>
+          <div class="flex items-baseline gap-3 mb-3 flex-wrap">
+            <h2 class="ds-title text-xl font-semibold">{{ book.title }}</h2>
+            <span v-if="book.author" class="ds-muted text-sm">{{ book.author }}</span>
+          </div>
+
+          <!-- 設定（改了即存進 config.json）-->
+          <div v-if="book.config" class="mb-5">
+            <div class="ds-label mb-2">設定</div>
+            <div class="ds-surface p-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+            <div class="flex items-center gap-1.5">
+              <span class="ds-label">任務</span>
+              <button v-for="t in tasks" :key="t.v" @click="setConfig('task', t.v)"
+                      class="ds-btn text-xs px-2.5 py-1" :class="book.config.task === t.v ? 'ds-btn--primary' : 'ds-btn--ghost'">{{ t.label }}</button>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="ds-label">格式</span>
+              <button v-for="m in ['ipynb','md']" :key="m" @click="setConfig('mode', m)"
+                      class="ds-btn text-xs px-2.5 py-1" :class="book.config.mode === m ? 'ds-btn--primary' : 'ds-btn--ghost'">{{ m }}</button>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="ds-label">截圖模型</span>
+              <button v-for="im in imageModels" :key="im.v" @click="setConfig('image_model', im.v)"
+                      class="ds-btn text-xs px-2.5 py-1" :class="book.config.image_model === im.v ? 'ds-btn--primary' : 'ds-btn--ghost'">{{ im.label }}</button>
+            </div>
+            <span v-if="configSaved" class="ds-muted text-xs">✓ 已存</span>
+            </div>
+          </div>
+
+          <div v-if="!langs.length" class="ds-card p-10 text-center ds-muted leading-relaxed">
+            尚無產物 —<br />把 PDF／照片放進 <code>book/{{ book.id }}/src/</code>，<br />
+            再用 <code>/readbot:digitize-book</code> 叫 Claude 數位化／翻譯。
+          </div>
+
+          <template v-else>
+            <!-- 資訊：語言 / 格式 / 類型 -->
+            <div class="mb-4">
+              <div class="ds-label mb-2">資訊</div>
+              <div class="ds-surface p-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+                <div class="flex items-center gap-1.5">
+                  <span class="ds-label">語言</span>
+                  <button v-for="l in langs" :key="l" @click="pickLang(l)"
+                          class="ds-btn text-xs px-2.5 py-1" :class="lang === l ? 'ds-btn--primary' : 'ds-btn--ghost'">{{ l }}</button>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="ds-label">格式</span>
+                  <button v-for="f in fmts" :key="f" @click="pickFmt(f)"
+                          class="ds-btn text-xs px-2.5 py-1" :class="fmt === f ? 'ds-btn--primary' : 'ds-btn--ghost'">{{ f }}</button>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="ds-label">類型</span>
+                  <button @click="pickKind('text')" class="ds-btn text-xs px-2.5 py-1" :class="kind === 'text' ? 'ds-btn--primary' : 'ds-btn--ghost'">本文</button>
+                  <button @click="pickKind('note')" class="ds-btn text-xs px-2.5 py-1" :class="kind === 'note' ? 'ds-btn--primary' : 'ds-btn--ghost'">筆記</button>
+                  <button @click="pickKind('mindmap')" class="ds-btn text-xs px-2.5 py-1" :class="kind === 'mindmap' ? 'ds-btn--primary' : 'ds-btn--ghost'">心智圖</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 章節：下拉選單（預設停在「請選擇章節」）-->
+            <div class="mb-4">
+              <div class="ds-label mb-2">章節</div>
+              <select :value="ch" @change="onChapterChange($event.target.value)"
+                      class="ds-select text-sm" style="min-width: 16rem; cursor: pointer;">
+                <option value="">請選擇章節</option>
+                <option v-for="c in chips" :key="c" :value="c">{{ c }}</option>
+              </select>
+              <span v-if="!chips.length" class="ds-muted text-sm ml-2">這個格式還沒有{{ kind === 'text' ? '本文' : '筆記' }}{{ kind === 'mindmap' ? '（心智圖由筆記產生）' : '' }}。</span>
+            </div>
+
+            <!-- 檢視器 -->
+            <div class="ds-card p-6">
+              <template v-if="kind === 'mindmap'">
+                <div v-if="!ch" class="ds-muted text-center py-10">選一個章節看心智圖。</div>
+                <svg v-else ref="mm" class="mindmap-svg"></svg>
+              </template>
+              <template v-else>
+                <div v-if="docLoading" class="ds-muted text-center py-10">載入中…</div>
+                <div v-else-if="docHtml" class="md-body ds-scroll" v-html="docHtml" ref="viewer"></div>
+                <div v-else class="ds-muted text-center py-10">選一個{{ kind === 'note' ? '筆記' : '章節' }}來看。</div>
+              </template>
+            </div>
+          </template>
+        </template>
+      </section>
+  </main>
+
+  <!-- 書庫 modal：書卡列表（封面當 icon ＋ 書名 ＋ 作者）-->
+  <div v-if="libraryOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="ds-backdrop absolute inset-0" @click="libraryOpen = false"></div>
+    <div class="ds-modal relative w-full max-w-4xl p-6 flex flex-col" style="max-height: 86vh;">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="ds-title text-lg font-semibold">書庫 <span class="ds-muted font-normal">· {{ books.length }}</span></h2>
+        <div class="flex items-center gap-2">
+          <button @click="openCreate" class="ds-btn ds-btn--primary text-sm px-3 py-1.5">＋ 新增書</button>
+          <button @click="loadBooks" class="ds-btn ds-btn--ghost text-sm px-2.5 py-1.5" title="重新整理">↻</button>
+          <button @click="libraryOpen = false" class="ds-btn ds-btn--ghost text-sm px-2.5 py-1.5" title="關閉">✕</button>
+        </div>
+      </div>
+
+      <div v-if="!books.length" class="ds-muted text-center py-14 leading-relaxed">
+        還沒有書 —<br />按「＋ 新增書」建一本，再把 PDF／照片放進它的 <code>src/</code>。
+      </div>
+
+      <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 overflow-y-auto ds-scroll pr-1">
+        <div v-for="b in books" :key="b.id" class="group relative">
+          <button @click="pickBook(b.id)"
+                  class="block w-full text-left ds-card p-0 overflow-hidden transition-transform hover:-translate-y-0.5"
+                  :style="selectedId === b.id ? 'outline: 2px solid var(--accent-bright);' : ''">
+            <div class="aspect-[3/4] grid place-items-center overflow-hidden" style="background: rgba(0,0,0,0.3);">
+              <img v-if="b.cover" :src="b.cover" class="w-full h-full object-cover" :alt="b.title" />
+              <span v-else class="text-4xl font-bold" style="color: var(--fg-subtle);">{{ (b.title || b.id).charAt(0) }}</span>
+            </div>
+            <div class="p-2.5">
+              <div class="text-sm font-medium leading-snug line-clamp-2" style="color: var(--fg);" :title="b.title">{{ b.title }}</div>
+              <div class="text-xs ds-muted truncate mt-0.5">{{ b.author || '—' }}</div>
+              <span class="ds-badge mt-1.5 inline-block" :style="b.has_output ? '' : 'opacity:.5;'">{{ b.has_output ? '已產出' : '待產出' }}</span>
+            </div>
+          </button>
+          <button @click="deleteBook(b)" title="刪除這本書（連同 src／output）"
+                  class="absolute top-1.5 right-1.5 w-7 h-7 rounded-md text-sm leading-none opacity-0 group-hover:opacity-100 transition-opacity grid place-items-center"
+                  style="background: rgba(0,0,0,0.55); color: #e5707e;">✕</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增書 modal -->
+  <div v-if="createBox.show" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="ds-backdrop absolute inset-0" @click="createBox.show = false"></div>
+    <div class="ds-modal relative w-full max-w-md p-6 space-y-4">
+      <h2 class="ds-title text-lg font-semibold">新增書</h2>
+      <p class="text-sm ds-muted leading-relaxed">
+        輸入書名（會用它當資料夾名）。server 會直接建好
+        <code>src/</code>、<code>output/</code>、<code>config.json</code>、<code>progress.md</code>。
+      </p>
+      <input v-model="createBox.name" @keyup.enter="createBook" placeholder="例如 llm_from_scratch"
+             class="ds-input w-full text-sm" />
+      <p v-if="createBox.error" class="text-xs" style="color:#e5707e;">{{ createBox.error }}</p>
+      <div class="flex items-center justify-end gap-2">
+        <button @click="createBox.show = false" class="ds-btn ds-btn--ghost text-sm px-3 py-1.5">取消</button>
+        <button @click="createBook" :disabled="createBox.busy" class="ds-btn ds-btn--primary text-sm px-3 py-1.5">
+          {{ createBox.busy ? '建立中…' : '建立' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 刪除書 確認 modal -->
+  <div v-if="deleteBox.show" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="ds-backdrop absolute inset-0" @click="deleteBox.show = false"></div>
+    <div class="ds-modal relative w-full max-w-md p-6 space-y-4">
+      <h2 class="ds-title text-lg font-semibold">確定刪除這本書？</h2>
+      <p class="text-sm leading-relaxed" style="color: var(--fg);">
+        會直接刪除整個 <code>book/{{ deleteBox.book && deleteBox.book.id }}/</code> 資料夾，
+        <b>包含 src 原始檔與 output 翻譯產物</b>，<b style="color:#e5707e;">無法復原</b>。
+      </p>
+      <p v-if="deleteBox.error" class="text-xs" style="color:#e5707e;">{{ deleteBox.error }}</p>
+      <div class="flex items-center justify-end gap-2">
+        <button @click="deleteBox.show = false" class="ds-btn ds-btn--ghost text-sm px-3 py-1.5">取消</button>
+        <button @click="confirmDelete" :disabled="deleteBox.busy" class="ds-btn ds-btn--secondary text-sm px-3 py-1.5" style="color:#e5707e;">
+          {{ deleteBox.busy ? '刪除中…' : '確定刪除' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="frontend/app.js"></script>
+</body>
+</html>

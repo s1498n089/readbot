@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# uv / virtualenv
+.venv/
+
+# 注意：uv.lock 應進版控（鎖定團隊一致的相依版本），故不忽略
+
+# 書庫（使用者的書：原始 PDF／照片 ＋ 翻譯產物；含版權內容，絕不進版控）
+book/
+
+# 本機環境變數／機密（防禦性忽略；後端不讀 .env，但若有放機密，絕不進版控）
+.env
+
+# ruff 快取
+.ruff_cache/
+
+# Claude Code 本機設定/狀態（skills 在 skills/，.claude 不屬於 plugin，不進版控）
+.claude/
+
+# 註：.mcp.json「進版控」——它是 plugin 內建的 Playwright MCP 宣告（可攜，用 ${PLAYWRIGHT_CDP_URL}
+# 與 ${CLAUDE_PROJECT_DIR} 變數、無機器路徑），安裝者一裝即自動註冊 playwright MCP。使用者特有的登入態不放這裡（見下方 .browser/）。
+
+# 使用者本機的瀏覽器登入態（CDP Chrome profile / 輸出 / 啟動腳本）——機密、機器專屬，絕不進版控。
+# setup 會在「使用者專案」底下建這個資料夾；登入只存在使用者端。CDP 是讀書機器人接「線上文件」的核心管道。
+.browser/
+
+# 過程性暫存夾（讀寫 JSON / dump 等中間檔寫這、用完清掉，不進版控）
+tmp/
+
+# OS / editor
+.DS_Store
+._*
+Thumbs.db
+.idea/
+.vscode/

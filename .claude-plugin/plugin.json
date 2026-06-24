@@ -1,0 +1,12 @@
+{
+  "name": "readbot",
+  "description": "把 Claude Code 變成讀書機器人：自動翻譯書籍、整理重點、產學習小卡。目前為框架骨架——Flask + Vue 3 看板殼、serve／setup skill、內建 Playwright MCP（CDP）。",
+  "version": "0.0.0",
+  "author": {
+    "name": "Allen Chen"
+  },
+  "license": "MIT",
+  "category": "productivity",
+  "tags": ["reading", "translation", "summarization", "flashcards", "study"],
+  "skills": "./skills"
+}
