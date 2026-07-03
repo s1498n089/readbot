@@ -53,7 +53,7 @@ function renderIpynb(text, base) {
   }).join('');
 }
 
-// ---- 心智圖（Markmap）：把筆記 md 抽成「精簡脈絡」樹 → SVG。只載 markmap-view（手組樹、不用重的 markmap-lib）。----
+// ---- 心智圖（Markmap）：把筆記 md「鏡射 note 區塊結構」抽成樹 → SVG。只載 markmap-view（手組樹，比 markmap-lib 無腦渲染更貼我們的散文＋條列 note）。----
 let _markmap = null;
 function loadMarkmap() {
   // pin 0.18.x（避免 @latest 跨到不相容的 d3 major）
@@ -84,7 +84,73 @@ function notebookMd(text) {
   } catch (e) { return ''; }
 }
 
-// 從筆記 md 抽精簡脈絡：章(h1) → 小節(## 1.x) → 重點一句 ＋ 各關鍵詞
+// 把一條文字濃縮成「短節點標籤」：優先取粗體開頭，否則取到第一個標點；太長就截斷
+function mmLabel(text) {
+  const t = text.trim();
+  const b = t.match(/^\*\*(.+?)\*\*/);
+  let label = b ? b[1] : t.split(/[：:。！？]/)[0];
+  label = label.replace(/[：:，、]\s*$/, '').trim();
+  return label.length > 22 ? label.slice(0, 22) + '…' : label;
+}
+
+// 把一個 ## 小節的內文，依「note 的區塊結構」鏡射成樹。
+// ⚠️ 這裡認得的標記（## x.y、**重點**、**白話打痛點**/粗體段落、**關鍵詞**、條列 -/*/1.、分隔符 、,，/、``` 略過）
+//    ＝專案根 note-style.md §B 的「結構契約」。改標記要同步改 note-style.md §B 與兩個 skill（tutor §4、digitize-book §7）。
+//   行為：**重點** → 💡一句；**白話打痛點**／其他粗體段落 → 父節點＋底下條列（依縮排巢狀）；**關鍵詞** → 🏷關鍵詞＋各詞。code fence／純散文 → 略過。
+function sectionChildren(part) {
+  const children = [];
+  let block = null;                     // 目前的「粗體區塊」父節點（條列掛在它底下）
+  let stackRoot = null, stack = null;   // 條列縮排堆疊（container 一換就重置）
+  let inFence = false;                  // ``` 程式碼圍欄內：整段略過（不要變成巨無霸節點）
+  const bulletInto = (container, indent, node) => {
+    if (stackRoot !== container) { stackRoot = container; stack = [{ indent: -1, node: { children: container } }]; }
+    while (stack.length > 1 && indent <= stack[stack.length - 1].indent) stack.pop();
+    stack[stack.length - 1].node.children.push(node);
+    stack.push({ indent, node });
+  };
+  for (const line of part.split('\n')) {
+    if (/^\s*```/.test(line)) { inFence = !inFence; continue; }   // 進/出 code fence
+    if (inFence) continue;
+    if (/^##\s/.test(line)) continue;            // 小節標題（另外處理）
+    if (/^\s*>/.test(line)) continue;            // 引言 blockquote → 跳過
+    const bm = line.match(/^(\s*)(?:[-*]|\d+\.)\s+(.+)$/);   // - / * / 1. 都算條列
+    if (bm) {
+      const indent = bm[1].replace(/\t/g, '  ').length;
+      bulletInto(block ? block.children : children, indent, { content: mmInline(mmLabel(bm[2])), children: [] });
+      continue;
+    }
+    const bl = line.match(/^\*\*(.+?)\*\*\s*[：:]?\s*(.*)$/);
+    if (bl) {
+      const label = bl[1].trim(), rest = (bl[2] || '').trim();
+      stackRoot = null;                          // 換區塊 → 條列堆疊重置
+      if (/^重點/.test(label)) {
+        block = null;
+        const first = rest.replace(/\s+/g, ' ').split(/(?<=[。！？])/)[0];
+        if (first) children.push({ content: '💡 ' + mmInline(first), children: [] });
+      } else if (/^關鍵詞/.test(label)) {
+        block = null;
+        const kw = { content: '🏷 ' + mmInline('關鍵詞'), children: [] };
+        rest.split(/[、,，/]/).map((s) => s.trim()).filter(Boolean).forEach((k) => kw.children.push({ content: mmInline(k), children: [] }));
+        if (kw.children.length) children.push(kw);
+      } else {                                   // 白話打痛點／JS bundle／Brotli…→ 父節點，底下掛條列
+        block = { content: mmInline(mmLabel(label)), children: [], _struct: /^白話|^程式/.test(label), _rest: rest };
+        children.push(block);
+      }
+      continue;
+    }
+    // 其餘散文／空行：略過（不重置 block，後續條列仍掛在目前區塊下）
+  }
+  // 結構標籤（白話打痛點…）若沒條列，就用它的「開頭一句」當內容（別整塊消失），與「重點→💡」對稱
+  children.forEach((n) => {
+    if (n._struct && !n.children.length && n._rest) {
+      const first = n._rest.replace(/\s+/g, ' ').split(/(?<=[。！？])/)[0];
+      if (first) { n.content = '💬 ' + mmInline(first); n._struct = false; }
+    }
+  });
+  return children.filter((n) => !n._struct || n.children.length);
+}
+
+// 從筆記 md 抽脈絡：章(h1) → 小節(## x.y) → 鏡射該節的區塊結構（重點／白話／關鍵詞＋巢狀條列）
 function buildMindmapTree(md, fallbackTitle) {
   const h1 = (md.match(/^#\s+(.+)$/m) || [])[1] || '';
   const title = h1.replace(/\s*(重點筆記|——|—).*$/, '').trim() || fallbackTitle || '心智圖';
@@ -92,16 +158,11 @@ function buildMindmapTree(md, fallbackTitle) {
   for (const part of md.split(/\n(?=##\s)/)) {
     const hm = part.match(/^##\s+(.+)$/m);
     if (!hm) continue;
-    const sec = { content: mmInline(hm[1].trim()), children: [] };
-    const zm = part.match(/\*\*重點\*\*[：:]\s*([\s\S]*?)(?=\n\n|\n\*\*|\n```|\n!\[|$)/);
-    if (zm) {
-      const first = zm[1].replace(/\s+/g, ' ').trim().split(/(?<=[。！？])/)[0];
-      if (first) sec.children.push({ content: '💡 ' + mmInline(first), children: [] });
-    }
-    const km = part.match(/\*\*關鍵詞\*\*[：:]\s*(.+)/);
-    if (km) km[1].split(/[、,，/]/).map((s) => s.trim()).filter(Boolean).forEach((kw) => sec.children.push({ content: mmInline(kw), children: [] }));
+    const sec = { content: mmInline(hm[1].trim()), children: sectionChildren(part) };
     if (sec.children.length) root.children.push(sec);
   }
+  // 保底：沒筆記／筆記不符區塊慣例 → 解析成空樹時，至少給一個提示節點，別讓 SVG 全空白
+  if (!root.children.length) root.children.push({ content: mmInline('（這章還沒有可用的筆記——心智圖由筆記產生）'), children: [] });
   return root;
 }
 
@@ -193,7 +254,7 @@ createApp({
       try {
         // doc 與「這章有哪些譯圖」並行抓；figs 失敗不影響本文
         const [figData, r] = await Promise.all([
-          fetch('/api/books/' + id + '/figs?' + q.toString()).then((x) => (x.ok ? x.json() : { zh: [] })).catch(() => ({ zh: [] })),
+          fetch('/api/books/' + id + '/figs?' + q.toString()).then((x) => (x.ok ? x.json() : { translated: [] })).catch(() => ({ translated: [] })),
           fetch('/api/books/' + id + '/doc?' + q.toString()),
         ]);
         if (this.ch !== c) return;  // 過期
@@ -209,7 +270,7 @@ createApp({
       }
     },
 
-    // 心智圖：來源＝該章「筆記」md → 抽精簡脈絡樹 → Markmap 畫進 <svg ref="mm">
+    // 心智圖：來源＝該章「筆記」md → 抽脈絡樹（鏡射 note 區塊結構）→ Markmap 畫進 <svg ref="mm">
     async renderMindmap(c) {
       this.docHtml = '';
       const id = encodeURIComponent(this.selectedId);

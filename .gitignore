@@ -30,6 +30,9 @@ book/
 # 過程性暫存夾（讀寫 JSON / dump 等中間檔寫這、用完清掉，不進版控）
 tmp/
 
+# 使用者個人化的筆記口味（tutor／digitize-book 寫筆記前會讀它）——因人而異、不隨 plugin 散布
+note-style.md
+
 # OS / editor
 .DS_Store
 ._*

@@ -7,8 +7,8 @@
 
 組成：
 - plugin manifest（`.claude-plugin/`，repo 自己當 marketplace）。
-- 三個 skill：`digitize-book`（核心，數位化／翻譯）、`serve`（開看板）、`setup`（裝 uv＋Node＋CDP 瀏覽器）。
-- **唯讀看板**：Flask（`server.py`）+ Vue 3 CDN（`index.html`／`frontend/`），掃 `book/` 當清單、顯示 `output/`（本文／筆記／**心智圖**三檢視；心智圖用 markmap-view CDN 動態 import、從該章筆記即時抽「小節＋關鍵詞」脈絡）。
+- 四個 skill：`digitize-book`（核心，數位化／翻譯）、`tutor`（陪讀：回答章節問題＋把學到的重點補進該章 note，只增補不改本文）、`serve`（開看板）、`setup`（裝 uv＋Node＋CDP 瀏覽器）。
+- **唯讀看板**：Flask（`server.py`）+ Vue 3 CDN（`index.html`／`frontend/`），掃 `book/` 當清單、顯示 `output/`（本文／筆記／**心智圖**三檢視；心智圖用 markmap-lib＋markmap-view CDN 動態 import、把該章筆記整份 md 直接轉成樹（無腦渲染、照 note 的標題／清單結構畫；note 結構自由、不必固定）。
 - 內建 Playwright MCP（`.mcp.json`）——CDP 核心管道：之後要翻譯的「書」也可能是線上文件（見 `docs/cdp-基本觀念.md`）。
 
 ## 資料模型（book/，在專案根）

@@ -236,6 +236,22 @@ def api_config(book_id):
     return jsonify(cfg)
 
 
+def _resolve_under_output(book_id, *parts):
+    """把 parts 接到該書 output/ 下，逐段擋穿越＋用 realpath 守門。
+    **全專案唯一做路徑穿越比對的地方**——三個讀檔端點都走它，免得守門邏輯散落、補強漏一處。
+    parts 內可含 '/'（如 api_output_file 的 relpath）；每一路徑段都必須是無穿越的單一名字。
+    回 (realpath, None) 成功，或 (None, (resp, code)) 失敗。"""
+    out_root = os.path.realpath(os.path.join(_book_path(book_id), "output"))
+    for part in parts:
+        for comp in str(part).replace("\\", "/").split("/"):
+            if comp in ("", "..") or comp != os.path.basename(comp):
+                return None, (jsonify({"error": "參數不合法"}), 400)
+    rp = os.path.realpath(os.path.join(out_root, *parts))
+    if not (rp == out_root or rp.startswith(out_root + os.sep)):
+        return None, (jsonify({"error": "找不到該檔"}), 404)
+    return rp, None
+
+
 @app.route("/api/books/<book_id>/doc")
 def api_doc(book_id):
     """取單一產物檔內容。query：lang、fmt(md|ipynb)、ch、kind(text|note)。"""
@@ -243,17 +259,14 @@ def api_doc(book_id):
         return jsonify({"error": "找不到該書"}), 404
     lang, fmt, ch = request.args.get("lang", ""), request.args.get("fmt", ""), request.args.get("ch", "")
     kind = request.args.get("kind", "text")
-    for comp in (lang, fmt, ch):  # 每段都擋穿越
-        if not comp or comp != os.path.basename(comp) or ".." in comp:
-            return jsonify({"error": "參數不合法"}), 400
     if fmt not in ("md", "ipynb"):
         return jsonify({"error": "格式只支援 md / ipynb"}), 400
     ext = "ipynb" if fmt == "ipynb" else "md"
-    sub = os.path.join("note", ch) if kind == "note" else ch
-    path = os.path.join(_book_path(book_id), "output", lang, fmt, sub, ch + "." + ext)
-    out_root = os.path.realpath(os.path.join(_book_path(book_id), "output"))
-    rp = os.path.realpath(path)
-    if not (rp == out_root or rp.startswith(out_root + os.sep)) or not os.path.isfile(rp):
+    parts = [lang, fmt] + (["note", ch] if kind == "note" else [ch]) + [ch + "." + ext]
+    rp, err = _resolve_under_output(book_id, *parts)
+    if err:
+        return err
+    if not os.path.isfile(rp):
         return jsonify({"error": "找不到該檔"}), 404
     mime = "application/json; charset=utf-8" if ext == "ipynb" else "text/markdown; charset=utf-8"
     return send_file(rp, mimetype=mime)
@@ -266,15 +279,12 @@ def api_figs(book_id):
         return jsonify({"error": "找不到該書"}), 404
     lang, fmt, ch = request.args.get("lang", ""), request.args.get("fmt", ""), request.args.get("ch", "")
     kind = request.args.get("kind", "text")
-    for comp in (lang, fmt, ch):  # 每段都擋穿越
-        if not comp or comp != os.path.basename(comp) or ".." in comp:
-            return jsonify({"error": "參數不合法"}), 400
-    sub = os.path.join("note", ch) if kind == "note" else ch
-    imgdir = os.path.join(_book_path(book_id), "output", lang, fmt, sub, "images")
-    out_root = os.path.realpath(os.path.join(_book_path(book_id), "output"))
-    rp = os.path.realpath(imgdir)
-    if not (rp == out_root or rp.startswith(out_root + os.sep)):
-        return jsonify({"error": "參數不合法"}), 400
+    if fmt not in ("md", "ipynb"):
+        return jsonify({"error": "格式只支援 md / ipynb"}), 400
+    parts = [lang, fmt] + (["note", ch] if kind == "note" else [ch]) + ["images"]
+    rp, err = _resolve_under_output(book_id, *parts)
+    if err:
+        return err
     suffix = "." + lang.lower() + ".png"  # 譯圖副檔名＝語言碼（與 output 資料夾同步）
     translated = sorted(f for f in os.listdir(rp) if f.lower().endswith(suffix)) if os.path.isdir(rp) else []
     return jsonify({"translated": translated})
@@ -285,9 +295,10 @@ def api_output_file(book_id, relpath):
     """服務 output/ 底下的任意檔（給本文／筆記內文引用的插圖用）。realpath 擋路徑穿越。"""
     if _safe_name(book_id) is None:
         return jsonify({"error": "找不到該書"}), 404
-    out_root = os.path.realpath(os.path.join(_book_path(book_id), "output"))
-    rp = os.path.realpath(os.path.join(out_root, relpath))
-    if not rp.startswith(out_root + os.sep) or not os.path.isfile(rp):
+    rp, err = _resolve_under_output(book_id, relpath)
+    if err:
+        return err
+    if not os.path.isfile(rp):
         return jsonify({"error": "找不到該檔"}), 404
     return send_file(rp)  # mimetype 由副檔名自動推斷（png → image/png）
 
