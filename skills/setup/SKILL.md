@@ -77,23 +77,23 @@ uv sync --project "<PLUGIN_DIR>"
    cp "<PLUGIN_DIR>/templates/launch-chrome-cdp.bat" "$(pwd)/.browser/"   # Windows
    cp "<PLUGIN_DIR>/templates/launch-chrome-cdp.sh"  "$(pwd)/.browser/"   # macOS / Linux
    ```
-   提醒使用者把 `.browser/` 加進**他自己專案**的 `.gitignore`（裡面有登入態）。
+   提醒使用者把 `.browser/` 加進自己專案的 `.gitignore`（裡面有登入態）。
 2. **由「Claude」幫使用者啟動那台 Chrome**（不必使用者手動雙擊——Claude 跑腳本＝等同人親手雙擊）：
    - Windows：`cmd //c "$(pwd)/.browser/launch-chrome-cdp.bat"`
    - macOS／Linux：`bash "$(pwd)/.browser/launch-chrome-cdp.sh"`
    會開出一台帶 9222 埠的 Chrome（背景、不阻塞）。
 3. **唯一需要「使用者」親手做的事：在那台 Chrome 登入要操作的網站**（最重要的是 **ChatGPT**（截圖用）；以及要讀的線上書籍／文件。登入無法自動化、只有真人能做；登一次就好，profile 會記住、下次免登）。
 4. 使用者登入後**即可直接用，不必重啟 Claude Code**（MCP 是用到瀏覽器工具時才連 CDP，Chrome 後開也接得上）。換 port 就設環境變數 `PLAYWRIGHT_CDP_URL`。
-   - Windows 上裸 `npx` 已實測可用；萬一某些 Windows 環境 MCP 因 `npx` 解析不到（找不到 `npx.cmd`）起不來：把 `.mcp.json` 的 `"command"` 改成 `"cmd"`、`"args"` 開頭插 `"/c", "npx"`（其餘不動；預設裸 `npx` 是為了跨平台）。
+   - Windows 上裸 `npx` 可直接用；萬一某些 Windows 環境 MCP 因 `npx` 解析不到（找不到 `npx.cmd`）起不來：把 `.mcp.json` 的 `"command"` 改成 `"cmd"`、`"args"` 開頭插 `"/c", "npx"`（其餘不動；預設裸 `npx` 是為了跨平台）。
 
 ### 6. 預核准瀏覽器自動化工具（免每次跳權限框）
 之後的功能會用到 plugin 內建的 playwright MCP 工具（navigate/click/type/upload…），預設**每個動作都會問一次權限**，一次流程十幾、二十框很煩。**徵得使用者同意後**，把這些工具預先核准。
 
 > ⚠️ 這步會**修改使用者專案的 `.claude/settings.local.json`**（本機級、Claude Code 預設 gitignore、不進他的版控）。動手前先講清楚、徵得同意；用「合併」不覆蓋。
 
-跑這個小腳本（讀現有→合併去重→原子寫回；只 append、不刪別人的設定）：
+跑這個小腳本（讀現有→合併去重→原子寫回；只 append、不刪別人的設定。帶 `--project` 用 plugin venv——使用者專案不一定有 pyproject，裸 `uv run` 會失敗）：
 ```bash
-uv run python - <<'PY'
+uv run --project "<PLUGIN_DIR>" python - <<'PY'
 import json, os
 d = os.path.join(os.getcwd(), ".claude"); os.makedirs(d, exist_ok=True)
 p = os.path.join(d, "settings.local.json")

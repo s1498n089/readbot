@@ -2,13 +2,13 @@
 
 ## 這是什麼
 
-**Readbot** —— 把 Claude Code 變成讀書機器人的 plugin：**把書數位化（可選翻譯）、整理重點、產學習小卡**。
+**Readbot** —— 把 Claude Code 變成讀書機器人的 plugin：**把書數位化（可選翻譯）、整理重點、陪讀問答**（學習小卡規劃中）。
 核心是 `digitize-book` skill：把 `book/<書>/src` 的 PDF／照片**逐頁轉圖 → 多模態讀 → 翻成繁中或原文照錄 → 寫成 md/ipynb 產物 ＋ 每小節重點筆記 ＋ 截出插圖**。
 
 組成：
 - plugin manifest（`.claude-plugin/`，repo 自己當 marketplace）。
 - 四個 skill：`digitize-book`（核心，數位化／翻譯）、`tutor`（陪讀：回答章節問題＋把學到的重點補進該章 note，只增補不改本文）、`serve`（開看板）、`setup`（裝 uv＋Node＋CDP 瀏覽器）。
-- **唯讀看板**：Flask（`server.py`）+ Vue 3 CDN（`index.html`／`frontend/`），掃 `book/` 當清單、顯示 `output/`（本文／筆記／**心智圖**三檢視；心智圖用 markmap-lib＋markmap-view CDN 動態 import、把該章筆記整份 md 直接轉成樹（無腦渲染、照 note 的標題／清單結構畫；note 結構自由、不必固定）。
+- **唯讀看板**：Flask（`server.py`）+ Vue 3 CDN（`index.html`／`frontend/`），掃 `book/` 當清單、顯示 `output/`（本文／筆記／**心智圖**三檢視）。心智圖只載 markmap-view（CDN 動態 import），由 `app.js` **手組樹**——鏡射該章筆記的**結構標記**（`## x.y` 小節、`**重點**`／`**關鍵詞**` 等＝note-style.md §B 的「結構契約」）；改標記要同步 note-style.md §B、tutor §4、digitize-book §7。
 - 內建 Playwright MCP（`.mcp.json`）——CDP 核心管道：之後要翻譯的「書」也可能是線上文件（見 `docs/cdp-基本觀念.md`）。
 
 ## 資料模型（book/，在專案根）
@@ -20,7 +20,7 @@ book/<書>/
   progress.md                         進度（口語記錄，給 skill 讀/寫）
   output/cover.png                    封面圖（書卡 icon；skill 抽自書第 1 頁）
   output/<語言>/<格式>/ch<n>/ch<n>.<ext>    本文（翻譯或數位化；語言預設 zh_tw、格式 md|ipynb）
-  output/<語言>/<格式>/ch<n>/images/        插圖（被本文引用）：figX-Y.png 原裁切、figX-Y.<語言>.png 選配譯圖（語言碼同 output 資料夾；看板自動加「譯圖/原圖」對照）
+  output/<語言>/<格式>/ch<n>/images/        插圖（被本文引用）：figX-Y.png 原裁切、figX-Y.<語言>.png 譯圖（task=translate 時每張都生；語言碼同 output 資料夾；看板自動加「譯圖/原圖」對照、預設原圖）
   output/<語言>/<格式>/note/ch<n>/ch<n>.<ext>   每小節一個重點的章節筆記
 ```
 - 過程檔（PDF 逐頁 PNG）→ `tmp/<書>/pages/`（gitignored）；產物只進 `book/<書>/output/`。
@@ -50,7 +50,7 @@ Lint/format：`uv run ruff format .`、`uv run ruff check --fix .`（手動跑�
 - 看板**不碰 output 內容**：產物（翻譯/數位化本文、筆記、插圖）一律由 skill 寫；server 只做管理寫入——建書骨架（POST）、改 config（PUT）、刪書（DELETE），**不寫任何 output 產物**。
 - Jinja 停用（`template_folder=None`），`index.html` 以 `send_file` 原始檔服務；勿改成 template 渲染。
 - `static_folder=ROOT, static_url_path=''` 把整個 plugin 目錄透過 HTTP 服務；靠「只綁 127.0.0.1 + 無 CORS」緩解（已知取捨）。
-- 讀檔端點用 `_safe_name` ＋ realpath 擋路徑穿越；書庫用 `--book-dir`／`BOOK_DIR`，預設 `cwd/book`；前端靜態檔永遠從 plugin 目錄（`ROOT`）服務。
+- 讀檔端點的路徑穿越守門集中在 `_resolve_under_output()`（逐段驗名＋realpath，全專案唯一比對點）、book_id 用 `_safe_name`；書庫用 `--book-dir`／`BOOK_DIR`，預設 `cwd/book`；前端靜態檔永遠從 plugin 目錄（`ROOT`）服務。
 - 要跑包內程式（serve／setup／digitize-book）→ 用 skill 的「Base directory」推 plugin 根（`<base>/../..`），**勿**靠 `$CLAUDE_PLUGIN_ROOT`／cwd（見 `docs/plugin-tutorial.md`）。
 
 ## 程式風格
