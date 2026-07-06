@@ -189,7 +189,7 @@ createApp({
 
   async mounted() {
     await this.loadBooks();
-    if (this.books.length) this.selectBook(this.books[0].id);
+    this.libraryOpen = true;   // 進站直接開書庫，讓使用者從書卡挑書（不自動跳進第一本）
   },
 
   computed: {
