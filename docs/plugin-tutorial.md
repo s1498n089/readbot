@@ -2,8 +2,8 @@
 
 以「把 Ad Generator 做成 plugin」為例，記錄**官方機制**與**實戰踩過的坑**（後者文件上查不到）。
 
-> 📌 註：本教學以本 repo 的**前身 ad-generator**（廣告生圖看板）為範例。這個 repo 現在已精簡成 **readbot 骨架**，
-> 目錄與 skill 名稱略有不同（skills 只剩 `serve`／`setup`、看板改成通用 `data/items` CRUD），但**plugin 機制完全一樣**——
+> 📌 註：本教學以本 repo 的**前身 ad-generator**（廣告生圖看板）為範例，目錄與 skill 名稱和現在的 readbot 略有不同
+>（readbot 現有 `digitize-book`／`tutor`／`serve`／`setup` 四個 skill、看板改為 `book/` 書庫），但 **plugin 機制完全一樣**——
 > 下面講的清單檔位置、用 Base directory 推 plugin 根、`.mcp.json` 變數展開、發版流程，照樣適用。把 `ad-generator` 心裡換成 `readbot` 即可。
 
 官方文件：

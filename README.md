@@ -31,9 +31,22 @@ book/<書>/
 ```
 語言層（`zh_tw`）日後可加 `en/`、`ja/`；格式（md/ipynb）做書時選、可並存。
 
+### `config.json` schema
+
+每本書一份；權威定義＝`server.py` 的 `DEFAULT_CONFIG`＋`VALID_*`。缺檔／缺欄／非法值都安全——server 讀取時自動補預設、正規化（`_read_config`），手動編輯壞了也不會掛。
+
+| 欄位 | 型別 | 合法值 | 預設 | 誰寫入 |
+|---|---|---|---|---|
+| `schema_version` | int | `1` | `1` | server（讀寫時自動補；保留給未來遷移） |
+| `mode` | str | `"md"` \| `"ipynb"` | `"ipynb"` | 使用者（看板或 digitize-book 對話中選） |
+| `image_model` | str | `"chatgpt"` \| `"claude_code"` | `"chatgpt"` | 使用者（同上） |
+| `task` | str | `"translate"` \| `"transcribe"` | `"translate"` | 使用者（同上） |
+| `title`／`author` | str | 自由字串 | `""` | digitize-book（抽自書的前幾頁） |
+| `cover` | str \| null | 檔名（相對 `output/`） | `null` | digitize-book（通常 `"cover.png"`） |
+
 ## 用法
 
-1. 把書放進 `book/<書名>/src/`（一個 PDF，或照片 `src/ch1/*.png`）。
+1. 把書放進 `book/<書名>/src/`（一個 PDF，或照片 `src/ch1/*.png`）。書資料夾建議用看板「＋ 新增書」建（會一併生成 `config.json`／`progress.md`）；手動建也行，`config.json` 缺檔＝一律視同預設值。
 2. 對話裡 `/readbot:digitize-book` —— 說要做第幾章、選任務（翻譯／數位化）、md／ipynb。
 3. `/readbot:serve` —— 開看板，選書看 `output/`（本文／筆記／心智圖三檢視、md／ipynb 切換）。
 4. `/readbot:tutor` —— 陪讀做好的章節：回答問題、把學到的重點補進該章筆記（心智圖跟著長）。

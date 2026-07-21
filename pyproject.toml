@@ -1,7 +1,7 @@
 [project]
 name = "readbot"
 version = "0.0.0"
-description = "Readbot 看板（Flask + Vue 3）—— 讀書機器人 plugin 的框架骨架"
+description = "Readbot 看板（Flask + Vue 3）—— 讀書機器人 plugin 的唯讀看板後端"
 requires-python = ">=3.9"
 dependencies = [
     "flask>=3.0",

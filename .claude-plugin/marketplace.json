@@ -4,13 +4,13 @@
     "name": "Allen Chen"
   },
   "metadata": {
-    "description": "Readbot — 讀書機器人 plugin（框架骨架）",
+    "description": "Readbot — 讀書機器人 plugin（數位化／翻譯＋章節筆記＋陪讀＋看板）",
     "version": "0.0.0"
   },
   "plugins": [
     {
       "name": "readbot",
-      "description": "把 Claude Code 變成讀書機器人：自動翻譯書籍、整理重點、產學習小卡。目前為框架骨架。",
+      "description": "把 Claude Code 變成讀書機器人：把書數位化（可選翻譯繁中）、整理章節重點、陪讀問答（學習小卡規劃中）。",
       "source": "./"
     }
   ]

@@ -150,4 +150,4 @@ CDP 講的就是第二種，下面都圍著「接管」說。
 
 > 這套流程在本 plugin 已經包好：Playwright 以 **MCP** 形式內建在 `.mcp.json`（CDP 接管 9222 的 Chrome）、由 **Claude** 驅動。
 > 環境準備（裝 Node、複製啟動腳本、登入你要操作的網站）見 `skills/setup/SKILL.md` 第 5 步。
-> 目前是框架骨架，還沒有實際用到瀏覽器的功能 skill；之後的讀書機器人功能（例如把線上文件／電子書接進來翻譯）會走這條 CDP 路徑。
+> `digitize-book` 的預設截圖管線就走這條路——CDP 接管已登入的 Chrome、操作 ChatGPT 做裁圖與生譯圖；之後把「線上文件／電子書」接進來翻譯，也是同一條 CDP 路徑。

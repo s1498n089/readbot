@@ -51,7 +51,7 @@ Lint/format：`uv run ruff format .`、`uv run ruff check --fix .`（手動跑�
 - Jinja 停用（`template_folder=None`），`index.html` 以 `send_file` 原始檔服務；勿改成 template 渲染。
 - `static_folder=ROOT, static_url_path=''` 把整個 plugin 目錄透過 HTTP 服務；靠「只綁 127.0.0.1 + 無 CORS」緩解（已知取捨）。
 - 讀檔端點的路徑穿越守門集中在 `_resolve_under_output()`（逐段驗名＋realpath，全專案唯一比對點）、book_id 用 `_safe_name`；書庫用 `--book-dir`／`BOOK_DIR`，預設 `cwd/book`；前端靜態檔永遠從 plugin 目錄（`ROOT`）服務。
-- 要跑包內程式（serve／setup／digitize-book）→ 用 skill 的「Base directory」推 plugin 根（`<base>/../..`），**勿**靠 `$CLAUDE_PLUGIN_ROOT`／cwd（見 `docs/plugin-tutorial.md`）。
+- 要跑包內程式（各 skill：digitize-book／tutor／serve／setup）→ 用 skill 的「Base directory」推 plugin 根（`<base>/../..`），**勿**靠 `$CLAUDE_PLUGIN_ROOT`／cwd（見 `docs/plugin-tutorial.md`）。
 
 ## 程式風格
 

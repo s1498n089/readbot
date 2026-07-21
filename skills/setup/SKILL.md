@@ -89,7 +89,7 @@ uv sync --project "<PLUGIN_DIR>"
 ### 6. 預核准瀏覽器自動化工具（免每次跳權限框）
 之後的功能會用到 plugin 內建的 playwright MCP 工具（navigate/click/type/upload…），預設**每個動作都會問一次權限**，一次流程十幾、二十框很煩。**徵得使用者同意後**，把這些工具預先核准。
 
-> ⚠️ 這步會**修改使用者專案的 `.claude/settings.local.json`**（本機級、Claude Code 預設 gitignore、不進他的版控）。動手前先講清楚、徵得同意；用「合併」不覆蓋。
+> ⚠️ 這步會**修改使用者專案的 `.claude/settings.local.json`**（本機級、Claude Code 預設 gitignore、不進使用者專案的版控）。動手前先講清楚、徵得同意；用「合併」不覆蓋。
 
 跑這個小腳本（讀現有→合併去重→原子寫回；只 append、不刪別人的設定。帶 `--project` 用 plugin venv——使用者專案不一定有 pyproject，裸 `uv run` 會失敗）：
 ```bash
