@@ -7,7 +7,7 @@
 
 組成：
 - plugin manifest（`.claude-plugin/`，repo 自己當 marketplace）。
-- 四個 skill：`digitize-book`（核心，數位化／翻譯）、`tutor`（陪讀：回答章節問題＋把學到的重點補進該章 note，只增補不改本文）、`serve`（開看板）、`setup`（裝 uv＋Node＋CDP 瀏覽器）。
+- 四個 skill：`digitize-book`（核心，數位化／翻譯）、`tutor`（陪讀：回答使用者的章節問題＋把學到的重點補進該章 note，只增補不改本文）、`serve`（開看板）、`setup`（裝 uv＋Node＋CDP 瀏覽器）。
 - **唯讀看板**：Flask（`server.py`）+ Vue 3 CDN（`index.html`／`frontend/`），掃 `book/` 當清單、顯示 `output/`（本文／筆記／**心智圖**三檢視）。心智圖只載 markmap-view（CDN 動態 import），由 `app.js` **手組樹**——鏡射該章筆記的**結構標記**（`## x.y` 小節、`**重點**`／`**關鍵詞**` 等＝note-style.md §B 的「結構契約」）；改標記要同步 note-style.md §B、tutor §4、digitize-book §7。
 - 內建 Playwright MCP（`.mcp.json`）——CDP 核心管道：之後要翻譯的「書」也可能是線上文件（見 `docs/cdp-基本觀念.md`）。
 
@@ -31,8 +31,10 @@ book/<書>/
 
 ```bash
 uv sync                     # 建 .venv + 裝相依
-uv run python server.py     # 看板 → http://localhost:5050（讀 ./book；--book-dir 指定、--reload 開發自動重啟）
+uv run python server.py     # 看板 → http://localhost:5050（讀 ./book）
 ```
+
+`server.py` 的完整參數（`--book-dir`／`--port`／`--reload`、環境變數）與「cwd 不在 repo 根時」的跑法 → 見 **[README](README.md)** 的「開發者：直接在 repo 跑」。
 
 改後端的驗法（沒有測試套件）：① `import server` 擋語法／import 錯；② 對著 `--reload` 的 server 打真端點做往返（用臨時 `--book-dir`、測完清掉、不碰真資料）。
 Lint/format：`uv run ruff format .`、`uv run ruff check --fix .`（手動跑）。
@@ -41,8 +43,8 @@ Lint/format：`uv run ruff format .`、`uv run ruff check --fix .`（手動跑�
 
 - **shell 動作走 Bash 工具**；包內 python 一律 `uv run --project "<PLUGIN_DIR>"`（plugin venv 才有 pymupdf/pillow）。
 - 指令別用 `cd xxx && uv run …` 開頭（不符 `Bash(uv run:*)` 會跳框）；Bash cwd 已是專案根，直接 `uv run …` + 相對路徑。
-- 破壞性指令（`rm`、`taskkill`）刻意不預核准，每次問過再做。
-- 🚨 **暫存檔別丟 project root**：PDF 逐頁圖等過程檔 → `tmp/`；瀏覽器流程暫存 → `.browser/tmp/`（都已 gitignore）。收工前清掉、確認 root 乾淨再回報。
+- 破壞性指令（`rm`、`taskkill`）刻意不預核准，每次先問過使用者再做。
+- 🚨 **暫存檔別丟 project root**：PDF 逐頁圖等過程檔 → `tmp/`；瀏覽器流程暫存 → `.browser/tmp/`（都已 gitignore）。收工前清掉、確認 root 乾淨再向使用者回報。
 
 ## 重要 gotchas（勿誤改）
 

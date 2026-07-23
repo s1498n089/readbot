@@ -1,7 +1,7 @@
 # Readbot — 讀書機器人（Claude Code plugin）
 
 把 Claude Code 裝上這包 plugin，就變身讀書機器人：**把書數位化（可選翻譯）、整理重點、陪讀問答**（學習小卡規劃中）。
-核心是 `digitize-book`：把書（PDF／照片）**逐頁轉圖 → 多模態讀 → 翻成繁中或原文照錄 → 產出 markdown 或 jupyter ＋ 每小節重點筆記 ＋ 截出插圖**，再用看板檢視、用 `tutor` 陪讀。
+核心是 `digitize-book`：把書（PDF／照片）**逐頁轉圖 → 多模態讀 → 翻成繁中或原文照錄 → 產出 markdown 或 jupyter ＋ 每小節重點筆記 ＋ 截出插圖**；使用者再用看板檢視、用 `tutor` 陪讀。
 
 ## 專案內容
 
@@ -9,7 +9,7 @@
 |---|---|
 | `.claude-plugin/` | `plugin.json` + `marketplace.json`（repo 自己當 marketplace，`source: "./"`） |
 | `skills/digitize-book` | **核心**：把 `book/<書>/src` 數位化／翻成 `output/` 的 md/ipynb ＋ 章節筆記 ＋ 插圖 |
-| `skills/tutor` | 陪讀：回答章節問題、把學到的重點增補進該章筆記（只增補、不改本文） |
+| `skills/tutor` | 陪讀：回答使用者的章節問題、把學到的重點增補進該章筆記（只增補、不改本文） |
 | `skills/serve` | 開看板 → http://localhost:5050（看 `book/` 清單與各書 `output/`） |
 | `skills/setup` | 裝環境：uv ＋ Node ＋ **CDP 瀏覽器**（ChatGPT 截圖／線上文件用） |
 | `.mcp.json` | 內建 Playwright MCP（CDP 接管 9222 的 Chrome），隨安裝自動註冊 |
@@ -33,7 +33,7 @@ book/<書>/
 
 ### `config.json` schema
 
-每本書一份；權威定義＝`server.py` 的 `DEFAULT_CONFIG`＋`VALID_*`。缺檔／缺欄／非法值都安全——server 讀取時自動補預設、正規化（`_read_config`），手動編輯壞了也不會掛。
+每本書一份；權威定義＝`server.py` 的 `DEFAULT_CONFIG`＋`VALID_*`。缺檔／缺欄／非法值都安全——server 讀取時自動補預設、正規化（`_read_config`），使用者手動編輯壞了也不會掛。
 
 | 欄位 | 型別 | 合法值 | 預設 | 誰寫入 |
 |---|---|---|---|---|
@@ -46,10 +46,10 @@ book/<書>/
 
 ## 用法
 
-1. 把書放進 `book/<書名>/src/`（一個 PDF，或照片 `src/ch1/*.png`）。書資料夾建議用看板「＋ 新增書」建（會一併生成 `config.json`／`progress.md`）；手動建也行，`config.json` 缺檔＝一律視同預設值。
-2. 對話裡 `/readbot:digitize-book` —— 說要做第幾章、選任務（翻譯／數位化）、md／ipynb。
+1. 把書放進 `book/<書名>/src/`（一個 PDF，或照片 `src/ch1/*.png`）。書資料夾建議用看板「＋ 新增書」建（會一併生成 `config.json`／`progress.md`）；手動建也行（`config.json` 缺檔視同預設）。
+2. 對話裡 `/readbot:digitize-book` —— 跟 Claude 說要做第幾章、選任務（翻譯／數位化）、md／ipynb。
 3. `/readbot:serve` —— 開看板，選書看 `output/`（本文／筆記／心智圖三檢視、md／ipynb 切換）。
-4. `/readbot:tutor` —— 陪讀做好的章節：回答問題、把學到的重點補進該章筆記（心智圖跟著長）。
+4. `/readbot:tutor` —— 陪讀做好的章節：Claude 回答問題、把學到的重點補進該章筆記（心智圖跟著長）。
 
 ## 為什麼要 CDP
 
@@ -61,9 +61,29 @@ book/<書>/
 
 ```bash
 uv sync                        # 建 .venv + 裝相依（Flask、PyMuPDF、Pillow、NumPy）
-uv run python server.py        # 看板 → http://localhost:5050（讀 ./book；--reload 開發自動重啟）
+uv run python server.py        # 看板 → http://localhost:5050（讀 ./book；參數見下表）
 claude --plugin-dir ./         # 以 plugin 形式載入 skills（/readbot:<skill>）
 ```
+
+上面是「**cwd 剛好在 repo 根**」的簡寫。**cwd 不在 repo**（或想指定別的書庫）就把路徑寫全——`--project` 指 **plugin 根**（才吃得到 plugin 的 venv，裡面才有 Flask／PyMuPDF），`server.py` 與 `--book-dir` 都給絕對路徑：
+
+```bash
+# 從任何位置都能跑
+uv run --project /path/to/readbot python /path/to/readbot/server.py --book-dir /path/to/book
+
+# Windows（PowerShell）同理
+uv run --project C:\path\to\readbot python C:\path\to\readbot\server.py --book-dir C:\path\to\readbot\book
+```
+
+`server.py` 的參數：
+
+| 參數 | 說明 | 預設 |
+|---|---|---|
+| `--book-dir` | 書庫目錄（其下一本書一個資料夾） | `<cwd>/book`；也可用 `BOOK_DIR` 環境變數 |
+| `--port` | 服務 port | `5050`；也可用 `PORT` 環境變數（預設避開 macOS AirPlay 佔用的 5000） |
+| `--reload` | 開發用：改 `server.py` 存檔就自動重啟 | 關閉 |
+
+（平常用 `/readbot:serve` 開看板即可，這段是要手動跑或除錯時用。）
 
 ## 安裝為 plugin
 
