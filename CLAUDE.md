@@ -3,7 +3,7 @@
 ## 這是什麼
 
 **Readbot** —— 把 Claude Code 變成讀書機器人的 plugin：**把書數位化（可選翻譯）、整理重點、陪讀問答**（學習小卡規劃中）。
-核心是 `digitize-book` skill：把 `book/<書>/src` 的 PDF／照片**逐頁轉圖 → 多模態讀 → 翻成繁中或原文照錄 → 寫成 md/ipynb 產物 ＋ 每小節重點筆記 ＋ 截出插圖**。
+核心是 `digitize-book` skill：把 `book/<書>/src` 的 PDF／照片**逐頁轉圖 → 多模態讀 → 翻成繁中或原文照錄 → 寫成 ipynb 產物 ＋ 每小節重點筆記 ＋ 截出插圖**。
 
 組成：
 - plugin manifest（`.claude-plugin/`，repo 自己當 marketplace）。
@@ -16,12 +16,12 @@
 ```
 book/<書>/
   src/                                原始輸入（PDF 或分章照片 ch1/ ch2/…）；UI 不顯示
-  config.json                         每本書設定（mode/image_model/task ＋ 書卡 metadata：title/author/cover）
+  config.json                         每本書設定（task ＋ 書卡 metadata：title/author/cover；mode／image_model 為保留欄位）
   progress.md                         進度（口語記錄，給 skill 讀/寫）
   output/cover.png                    封面圖（書卡 icon；skill 抽自書第 1 頁）
-  output/<語言>/<格式>/ch<n>/ch<n>.<ext>    本文（翻譯或數位化；語言預設 zh_tw、格式 md|ipynb）
-  output/<語言>/<格式>/ch<n>/images/        插圖（被本文引用）：figX-Y.png 原裁切、figX-Y.<語言>.png 譯圖（task=translate 時每張都生；語言碼同 output 資料夾；看板自動加「譯圖/原圖」對照、預設原圖）
-  output/<語言>/<格式>/note/ch<n>/ch<n>.<ext>   每小節一個重點的章節筆記
+  output/<語言>/ipynb/ch<n>/ch<n>.ipynb    本文（翻譯或數位化；語言預設 zh_tw）
+  output/<語言>/ipynb/ch<n>/images/        插圖（被本文引用）：figX-Y.png 原裁切、figX-Y.<語言>.png 譯圖（task=translate 時每張都生；語言碼同 output 資料夾；看板自動加「譯圖/原圖」對照、預設原圖）
+  output/<語言>/ipynb/note/ch<n>/ch<n>.ipynb   每小節一個重點的章節筆記
 ```
 - 過程檔（PDF 逐頁 PNG）→ `tmp/<書>/pages/`（gitignored）；產物只進 `book/<書>/output/`。
 

@@ -1,11 +1,11 @@
 ---
 name: serve
-description: 啟動 Readbot 的看板 WebUI（Flask，http://localhost:5050），檢視目前專案 book/ 底下的書與各書的產物（output/ 的 md/ipynb 本文與章節筆記）。觸發詞（含口語）：「開看板 / 開啟 WebUI / 打開介面 / 開網頁 / 把 server 跑起來 / 啟動服務 / 開 UI / 開 dashboard / 看做好的書 / 打開 localhost:5050 / 開 5050」等。會用 skill 自己的位置定位 plugin 內的 server.py，並讀取使用者目前專案的 book/。
+description: 啟動 Readbot 的看板 WebUI（Flask，http://localhost:5050），檢視目前專案 book/ 底下的書與各書的產物（output/ 的 ipynb 本文與章節筆記）。觸發詞（含口語）：「開看板 / 開啟 WebUI / 打開介面 / 開網頁 / 把 server 跑起來 / 啟動服務 / 開 UI / 開 dashboard / 看做好的書 / 打開 localhost:5050 / 開 5050」等。會用 skill 自己的位置定位 plugin 內的 server.py，並讀取使用者目前專案的 book/。
 ---
 
 # serve
 
-啟動 Readbot 看板（檢視產物）。看板掃**目前專案 `./book`** 底下的書當清單，選一本後顯示它 `output/` 的產物（md/ipynb 本文＋每章筆記）。
+啟動 Readbot 看板（檢視產物）。看板掃**目前專案 `./book`** 底下的書當清單，選一本後顯示它 `output/` 的產物（ipynb 本文＋每章筆記）。
 plugin 內含 Flask 後端與 Vue 前端；**看板不寫 output 產物、不打外部 API、只綁 127.0.0.1**（建書／改設定／刪書是管理寫入）。數位化／翻譯由 `/readbot:digitize-book` 做、寫進 `book/<書>/output/`，產完**重刷頁面**即見。
 
 ## 步驟

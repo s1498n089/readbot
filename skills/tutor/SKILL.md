@@ -14,14 +14,14 @@ description: 陪使用者「唸」一本已數位化／翻譯好的書——回�
 系統會在開頭給「**Base directory for this skill**」（= `<plugin>/skills/tutor`）。**plugin 根 = 該 base 的上兩層**（`<base>/../..`），解析成絕對路徑 `<PLUGIN_DIR>`，需要跑包內 python 時帶 `--project "<PLUGIN_DIR>"`。`book/` 相對使用者目前 cwd；產物只在 `book/<書>/output/`、過程檔進 `tmp/`，**勿污染 project root**。
 
 ## 1. 確認要陪讀哪本、哪一章
-- **哪本書／哪一章** → 對到 `book/<書>/`。先讀 `config.json`（語言、格式 md/ipynb）與 `progress.md`（哪些章已做好），不夠再問使用者。
-- **前提檢查**：該章要已有產物——本文 `output/<語言>/<fmt>/ch<n>/ch<n>.<ext>` 與 note `.../note/ch<n>/ch<n>.<ext>`。**還沒有 → 先請使用者用 `/readbot:digitize-book` 做那一章**（tutor 不負責產出本文）。
+- **哪本書／哪一章** → 對到 `book/<書>/`。先讀 `config.json`（語言）與 `progress.md`（哪些章已做好），不夠再問使用者。
+- **前提檢查**：該章要已有產物——本文 `output/<語言>/ipynb/ch<n>/ch<n>.ipynb` 與 note `.../note/ch<n>/ch<n>.ipynb`。**還沒有 → 先請使用者用 `/readbot:digitize-book` 做那一章**（tutor 不負責產出本文）。
 
 ## 2. 載入該章上下文（教對的前提）
 用 **Read** 把該章**本文＋note**讀進來當依據——手上有完整章節脈絡，才能講對、才不會跟書打架。
-- 本文：`book/<書>/output/<語言>/<fmt>/ch<n>/ch<n>.<ext>`
-- 筆記：`book/<書>/output/<語言>/<fmt>/note/ch<n>/ch<n>.<ext>`
-- 使用者問到某個詞／某段時，**先回本文找到原句**（必要時 `grep` 該章 ipynb/md）再解釋，確保講的跟書一致；書上沒有、屬延伸知識，就明說是補充。
+- 本文：`book/<書>/output/<語言>/ipynb/ch<n>/ch<n>.ipynb`
+- 筆記：`book/<書>/output/<語言>/ipynb/note/ch<n>/ch<n>.ipynb`
+- 使用者問到某個詞／某段時，**先回本文找到原句**（必要時 `grep` 該章 ipynb）再解釋，確保講的跟書一致；書上沒有、屬延伸知識，就明說是補充。
 
 ## 3. 陪讀：用「白話打痛點」把難懂處講通
 回答使用者的問題時，照 digitize-book §7 的精神（這正是本 plugin 最有價值的地方）：
@@ -38,9 +38,7 @@ description: 陪使用者「唸」一本已數位化／翻譯好的書——回�
   - **該節已有 note → 併進去**（補在既有內容後、或相關段落旁），不另開一塊。
   - **該節還沒 note → 在「正確節次順序」的位置新建** `## x.y <小節標題>`（例：1.4 與 1.4.5 之間補 1.4.1）。
   - **別用泛泛的「## 補充」另立區塊**：對齊真實節次，心智圖才會把它掛在對的小節下、複習時也按書的節次找得到。（例：問「Brotli／JS bundle 是什麼」→ 本文落在 §1.4.1 → 收進 `## 1.4.1`，而不是 `## 補充`。）
-- **跟本文同格式寫**：
-  - **ipynb** → 先 **Read** 該 note（看 `<cell id="...">`），再用 **NotebookEdit** 在相關 cell 後 `insert` 一個 **markdown cell**（`cell_type: markdown`）。
-  - **md** → 在相關段落後插入一段。
+- **note 是 ipynb**：先 **Read** 該 note（看 `<cell id="...">`），再用 **NotebookEdit** 在相關 cell 後 `insert` 一個 **markdown cell**（`cell_type: markdown`）。
 - **原子安全**：NotebookEdit 是單 cell 操作、天然安全；若是手寫 ipynb JSON 則先 `.tmp` 再 `os.replace`。
 - ⚠️ **marked.js 核心版不吃 markdown 註腳**（`[^1]` 會原樣噴出、爆版）：要附註用「（注 N）」＋該段後面 blockquote `> **注 N**：…`。表格、`$ $`／`$$ $$` 數學可用。
 - 🚫 **絕不改本文**：只在 note 增補；翻譯／數位化本文一律不動。

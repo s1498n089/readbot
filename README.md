@@ -1,14 +1,14 @@
 # Readbot — 讀書機器人（Claude Code plugin）
 
 把 Claude Code 裝上這包 plugin，就變身讀書機器人：**把書數位化（可選翻譯）、整理重點、陪讀問答**（學習小卡規劃中）。
-核心是 `digitize-book`：把書（PDF／照片）**逐頁轉圖 → 多模態讀 → 翻成繁中或原文照錄 → 產出 markdown 或 jupyter ＋ 每小節重點筆記 ＋ 截出插圖**；使用者再用看板檢視、用 `tutor` 陪讀。
+核心是 `digitize-book`：把書（PDF／照片）**逐頁轉圖 → 多模態讀 → 翻成繁中或原文照錄 → 產出 jupyter（ipynb）＋ 每小節重點筆記 ＋ 截出插圖**；使用者再用看板檢視、用 `tutor` 陪讀。
 
 ## 專案內容
 
 | 項目 | 說明 |
 |---|---|
 | `.claude-plugin/` | `plugin.json` + `marketplace.json`（repo 自己當 marketplace，`source: "./"`） |
-| `skills/digitize-book` | **核心**：把 `book/<書>/src` 數位化／翻成 `output/` 的 md/ipynb ＋ 章節筆記 ＋ 插圖 |
+| `skills/digitize-book` | **核心**：把 `book/<書>/src` 數位化／翻成 `output/` 的 ipynb ＋ 章節筆記 ＋ 插圖 |
 | `skills/tutor` | 陪讀：回答使用者的章節問題、把學到的重點增補進該章筆記（只增補、不改本文） |
 | `skills/serve` | 開看板 → http://localhost:5050（看 `book/` 清單與各書 `output/`） |
 | `skills/setup` | 裝環境：uv ＋ Node ＋ **CDP 瀏覽器**（ChatGPT 截圖／線上文件用） |
@@ -21,15 +21,14 @@
 ```
 book/<書>/
   src/                              原始 PDF，或分章照片 ch1/ ch2/…（看板不顯示）
-  config.json                       每本書設定（task=翻譯/數位化、mode=md|ipynb、image_model ＋ 書卡：title/author/cover）
+  config.json                       每本書設定（task=翻譯/數位化 ＋ 書卡：title/author/cover；mode／image_model 為保留欄位）
   progress.md                       進度（口語記錄）
   output/cover.png                  封面圖（書卡 icon，抽自書第 1 頁）
-  output/zh_tw/md/ch3/ch3.md        本文（markdown；翻譯或數位化）
-  output/zh_tw/md/ch3/images/       插圖：figX-Y.png 原裁切；翻譯時另有 figX-Y.zh_tw.png 譯圖（看板可切原圖／譯圖）
-  output/zh_tw/md/note/ch3/ch3.md   每小節一個重點的筆記
-  output/zh_tw/ipynb/…              選 jupyter 時（科技書：LaTeX ＋ 可跑 code）
+  output/zh_tw/ipynb/ch3/ch3.ipynb       本文（翻譯或數位化）
+  output/zh_tw/ipynb/ch3/images/         插圖：figX-Y.png 原裁切；翻譯時另有 figX-Y.zh_tw.png 譯圖（看板可切原圖／譯圖）
+  output/zh_tw/ipynb/note/ch3/ch3.ipynb  每小節一個重點的筆記
 ```
-語言層（`zh_tw`）日後可加 `en/`、`ja/`；格式（md/ipynb）做書時選、可並存。
+語言層（`zh_tw`）日後可加 `en/`、`ja/`。產物格式目前一律 `ipynb`。
 
 ### `config.json` schema
 
@@ -38,17 +37,17 @@ book/<書>/
 | 欄位 | 型別 | 合法值 | 預設 | 誰寫入 |
 |---|---|---|---|---|
 | `schema_version` | int | `1` | `1` | server（讀寫時自動補；保留給未來遷移） |
-| `mode` | str | `"md"` \| `"ipynb"` | `"ipynb"` | 使用者（看板或 digitize-book 對話中選） |
-| `image_model` | str | `"chatgpt"` \| `"claude_code"` | `"chatgpt"` | 使用者（同上） |
-| `task` | str | `"translate"` \| `"transcribe"` | `"translate"` | 使用者（同上） |
+| `mode` | str | `"md"` \| `"ipynb"` | `"ipynb"` | 保留欄位——server 仍收、但 UI 未開放、skill 一律產 ipynb（未來要加格式時再啟用） |
+| `image_model` | str | `"chatgpt"` \| `"claude_code"` | `"chatgpt"` | 保留欄位——server 仍收、但 UI 未開放、skill 一律走 ChatGPT（未來換生圖模型時再啟用） |
+| `task` | str | `"translate"` \| `"transcribe"` | `"translate"` | 使用者（看板或 digitize-book 對話中選） |
 | `title`／`author` | str | 自由字串 | `""` | digitize-book（抽自書的前幾頁） |
 | `cover` | str \| null | 檔名（相對 `output/`） | `null` | digitize-book（通常 `"cover.png"`） |
 
 ## 用法
 
 1. 把書放進 `book/<書名>/src/`（一個 PDF，或照片 `src/ch1/*.png`）。書資料夾建議用看板「＋ 新增書」建（會一併生成 `config.json`／`progress.md`）；手動建也行（`config.json` 缺檔視同預設）。
-2. 對話裡 `/readbot:digitize-book` —— 跟 Claude 說要做第幾章、選任務（翻譯／數位化）、md／ipynb。
-3. `/readbot:serve` —— 開看板，選書看 `output/`（本文／筆記／心智圖三檢視、md／ipynb 切換）。
+2. 對話裡 `/readbot:digitize-book` —— 跟 Claude 說要做第幾章、選任務（翻譯／數位化）。
+3. `/readbot:serve` —— 開看板，選書看 `output/`（本文／筆記／心智圖三檢視）。
 4. `/readbot:tutor` —— 陪讀做好的章節：Claude 回答問題、把學到的重點補進該章筆記（心智圖跟著長）。
 
 ## 為什麼要 CDP
