@@ -47,8 +47,8 @@ book/<書>/
 
 1. 把書放進 `book/<書名>/src/`（一個 PDF，或照片 `src/ch1/*.png`）。書資料夾建議用看板「＋ 新增書」建（會一併生成 `config.json`／`progress.md`）；手動建也行（`config.json` 缺檔視同預設）。
 2. 對話裡 `/readbot:digitize-book` —— 跟 Claude 說要做第幾章、選任務（翻譯／數位化）。
-3. `/readbot:serve` —— 開看板，選書看 `output/`（本文／筆記／心智圖三檢視）。
-4. `/readbot:tutor` —— 陪讀做好的章節：Claude 回答問題、把學到的重點補進該章筆記（心智圖跟著長）。
+3. `/readbot:serve` —— 開看板，選書看 `output/`（本文／筆記兩檢視）。
+4. `/readbot:tutor` —— 陪讀做好的章節：Claude 回答問題、把學到的重點補進該章筆記。
 
 ## 為什麼要 CDP
 
@@ -59,7 +59,7 @@ book/<書>/
 需求：[**uv**](https://docs.astral.sh/uv/)。
 
 ```bash
-uv sync                        # 建 .venv + 裝相依（Flask、PyMuPDF、Pillow、NumPy）
+uv sync                        # 建 .venv + 裝相依（Flask、PyMuPDF、Pillow）
 uv run python server.py        # 看板 → http://localhost:5050（讀 ./book；參數見下表）
 claude --plugin-dir ./         # 以 plugin 形式載入 skills（/readbot:<skill>）
 ```

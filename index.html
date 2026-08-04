@@ -118,7 +118,6 @@
                   <span class="ds-label">類型</span>
                   <button @click="pickKind('text')" class="ds-btn text-xs px-2.5 py-1" :class="kind === 'text' ? 'ds-btn--primary' : 'ds-btn--ghost'">本文</button>
                   <button @click="pickKind('note')" class="ds-btn text-xs px-2.5 py-1" :class="kind === 'note' ? 'ds-btn--primary' : 'ds-btn--ghost'">筆記</button>
-                  <button @click="pickKind('mindmap')" class="ds-btn text-xs px-2.5 py-1" :class="kind === 'mindmap' ? 'ds-btn--primary' : 'ds-btn--ghost'">心智圖</button>
                 </div>
               </div>
             </div>
@@ -131,20 +130,14 @@
                 <option value="">請選擇章節</option>
                 <option v-for="c in chips" :key="c" :value="c">{{ c }}</option>
               </select>
-              <span v-if="!chips.length" class="ds-muted text-sm ml-2">這個格式還沒有{{ kind === 'text' ? '本文' : '筆記' }}{{ kind === 'mindmap' ? '（心智圖由筆記產生）' : '' }}。</span>
+              <span v-if="!chips.length" class="ds-muted text-sm ml-2">這個格式還沒有{{ kind === 'text' ? '本文' : '筆記' }}。</span>
             </div>
 
             <!-- 檢視器 -->
             <div class="ds-card p-6">
-              <template v-if="kind === 'mindmap'">
-                <div v-if="!ch" class="ds-muted text-center py-10">選一個章節看心智圖。</div>
-                <svg v-else ref="mm" class="mindmap-svg"></svg>
-              </template>
-              <template v-else>
-                <div v-if="docLoading" class="ds-muted text-center py-10">載入中…</div>
-                <div v-else-if="docHtml" class="md-body ds-scroll" v-html="docHtml" ref="viewer"></div>
-                <div v-else class="ds-muted text-center py-10">選一個{{ kind === 'note' ? '筆記' : '章節' }}來看。</div>
-              </template>
+              <div v-if="docLoading" class="ds-muted text-center py-10">載入中…</div>
+              <div v-else-if="docHtml" class="md-body ds-scroll" v-html="docHtml" ref="viewer"></div>
+              <div v-else class="ds-muted text-center py-10">選一個{{ kind === 'note' ? '筆記' : '章節' }}來看。</div>
             </div>
           </template>
         </template>

@@ -8,7 +8,7 @@
 組成：
 - plugin manifest（`.claude-plugin/`，repo 自己當 marketplace）。
 - 四個 skill：`digitize-book`（核心，數位化／翻譯）、`tutor`（陪讀：回答使用者的章節問題＋把學到的重點補進該章 note，只增補不改本文）、`serve`（開看板）、`setup`（裝 uv＋Node＋CDP 瀏覽器）。
-- **唯讀看板**：Flask（`server.py`）+ Vue 3 CDN（`index.html`／`frontend/`），掃 `book/` 當清單、顯示 `output/`（本文／筆記／**心智圖**三檢視）。心智圖只載 markmap-view（CDN 動態 import），由 `app.js` **手組樹**——鏡射該章筆記的**結構標記**（`## x.y` 小節、`**重點**`／`**關鍵詞**` 等＝note-style.md §B 的「結構契約」）；改標記要同步 note-style.md §B、tutor §4、digitize-book §7。
+- **唯讀看板**：Flask（`server.py`）+ Vue 3 CDN（`index.html`／`frontend/`），掃 `book/` 當清單、顯示 `output/`（本文／筆記兩檢視）。
 - 內建 Playwright MCP（`.mcp.json`）——CDP 核心管道：之後要翻譯的「書」也可能是線上文件（見 `docs/cdp-基本觀念.md`）。
 
 ## 資料模型（book/，在專案根）
@@ -27,7 +27,7 @@ book/<書>/
 
 ## 環境與指令（uv）
 
-團隊統一用 **uv**（勿用 pip）。`uv.lock` 進版控。相依：**Flask**（看板）＋ **PyMuPDF／Pillow／NumPy**（PDF→圖、截圖邊界偵測）。
+團隊統一用 **uv**（勿用 pip）。`uv.lock` 進版控。相依：**Flask**（看板）＋ **PyMuPDF／Pillow**（PDF→頁圖、封面與插圖處理）。
 
 ```bash
 uv sync                     # 建 .venv + 裝相依
