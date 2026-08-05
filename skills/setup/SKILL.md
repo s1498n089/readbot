@@ -28,14 +28,22 @@ description: 安裝/設定 Readbot（讀書機器人）的執行環境：經套�
   ```bash
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   ```
-  裝完找不到 `brew` → 用 `/opt/homebrew/bin/brew`（Apple Silicon PATH 未設）。
-- **Windows** Scoop（PowerShell）：
+  **Apple Silicon 裝完，請使用者把 brew 加進 PATH**（新開的 shell 才找得到 `brew`）：
+  ```bash
+  echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+  ```
+  Claude 後續在**新的 bash 呼叫**裡跑 brew 仍要用完整路徑 `/opt/homebrew/bin/brew`（每次 bash 不共用 shell 狀態、PATH 不會帶過來）。
+- **Windows** Scoop（PowerShell；`Set-ExecutionPolicy` 會問 Y/N，請使用者自己跑或按確認）：
   ```powershell
-  Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force; iwr -useb get.scoop.sh | iex
+  # 允許執行從網路下載、具數位簽章的 PowerShell 腳本
+  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+  # 安裝 scoop
+  Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
   ```
 - **Linux**（無 brew/scoop 文化，下面 uv/nvm 改用官方安裝器）。
 
-**3b. uv**（看板必備）：`uv --version` 有 → 跳過；否則 `brew install uv`／`scoop install uv`（Linux：`curl -LsSf https://astral.sh/uv/install.sh | sh`）。
+**3b. uv**（看板必備）：`uv --version` 有 → 跳過；否則 `brew install uv`／`scoop install uv`（Linux：`curl -LsSf https://astral.sh/uv/install.sh | sh`）。macOS Apple Silicon 若由 Claude 跑，`brew` 要用完整路徑 `/opt/homebrew/bin/brew`（見 3a 註）。
 
 **3c. Node（用 nvm 裝 Node 24 LTS）**——瀏覽器自動化（Playwright MCP，`digitize-book` 截圖會用）要跑 `npx`，所以需要 Node。
 `node --version` 與 `npx --version` 都有且 Node ≥ 20 → 跳過（已夠用，不必硬升到 24）；**沒有 Node 時才裝**，裝就裝 24 LTS、用 nvm（依 OS）：
@@ -46,13 +54,19 @@ description: 安裝/設定 Readbot（讀書機器人）的執行環境：經套�
   nvm use 24
   ```
   （新版 nvm-windows `nvm install 24` 會解析成最新 24.x；舊版只吃完整版號就改 `nvm install lts` 或 `nvm install 24.x.x`。）
-- **macOS**（Homebrew 裝 nvm；要自建 `NVM_DIR` 並 source，且 **source 與 `nvm install` 必須在同一條 bash 指令**——每次 bash 不共用 shell 狀態）：
+- **macOS**（Homebrew 裝 nvm；把 nvm 寫進 `~/.zshrc` 才持久，請使用者自己跑）：
   ```bash
   brew install nvm
   mkdir -p ~/.nvm
-  export NVM_DIR="$HOME/.nvm"; . "$(brew --prefix nvm)/nvm.sh"; nvm install 24 && nvm use 24
+  cat >> ~/.zshrc << 'EOF'
+
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
+  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+  EOF
+  source ~/.zshrc
+  nvm install 24 && nvm use 24
   ```
-  提醒使用者把 `export NVM_DIR="$HOME/.nvm"` 與 `. "$(brew --prefix nvm)/nvm.sh"` 加進 `~/.zshrc`（之後新 shell 才有 node）。
 - **Linux**（官方 nvm 安裝器）：
   ```bash
   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
@@ -82,7 +96,7 @@ uv sync --project "<PLUGIN_DIR>"
    - Windows：`cmd //c "$(pwd)/.browser/launch-chrome-cdp.bat"`
    - macOS／Linux：`bash "$(pwd)/.browser/launch-chrome-cdp.sh"`
    會開出一台帶 9222 埠的 Chrome（背景、不阻塞）。
-3. **唯一需要「使用者」親手做的事：在那台 Chrome 登入要操作的網站**（最重要的是 **ChatGPT**（截圖用）；以及要讀的線上書籍／文件。登入無法自動化、只有真人能做；登一次就好，profile 會記住、下次免登）。
+3. **唯一需要「使用者」親手做的事：在那台 Chrome 登入 ChatGPT**（裁圖／生譯圖用）。登入無法自動化、只有真人能做；登一次就好，profile 會記住、下次免登。
 4. 使用者登入後**即可直接用，不必重啟 Claude Code**（MCP 是用到瀏覽器工具時才連 CDP，Chrome 後開也接得上）。換 port 就設環境變數 `PLAYWRIGHT_CDP_URL`。
    - Windows 上裸 `npx` 可直接用；萬一某些 Windows 環境 MCP 因 `npx` 解析不到（找不到 `npx.cmd`）起不來：把 `.mcp.json` 的 `"command"` 改成 `"cmd"`、`"args"` 開頭插 `"/c", "npx"`（其餘不動；預設裸 `npx` 是為了跨平台）。
 
@@ -104,7 +118,7 @@ if os.path.isfile(p):
 perms = cfg.setdefault("permissions", {})
 allow = perms.setdefault("allow", []); ask = perms.setdefault("ask", [])
 for x in ["mcp__plugin_readbot_playwright",
-          "Bash(uv run:*)", "Bash(uv sync:*)", "Bash(curl:*)", "Bash(mkdir:*)", "Bash(ls:*)", "Bash(date:*)", "Bash(cmd:*)", "Bash(bash:*)",
+          "Bash(uv run:*)", "Bash(uv sync:*)", "Bash(curl:*)", "Bash(mkdir:*)", "Bash(ls:*)", "Bash(cmd:*)", "Bash(bash:*)",
           "Write(book/**)", "Edit(book/**)", "Read(book/**)", "Write(tmp/**)", "Edit(tmp/**)", "Read(tmp/**)"]:
     if x not in allow: allow.append(x)
 for x in ["mcp__plugin_readbot_playwright__browser_run_code_unsafe"]:
@@ -115,7 +129,7 @@ PY
 ```
 - **allow `mcp__plugin_readbot_playwright`**：授**整個內建 playwright server**（官方明確支援、跨版本最穩、涵蓋所有 `browser_` 工具；`<plugin>` 是 `readbot`）。
 - **ask `…__browser_run_code_unsafe`**：任意執行碼維持「每次問」——`ask` 優先級高於 `allow`，會蓋過整包 allow，不會被誤放行。
-- 順帶預核准流程實際會用到的 Bash 指令：`uv run`／`uv sync`（跑 server/腳本）、`curl`（探 CDP 埠）、`mkdir`（建暫存夾）、`ls`／`date`（列檔/時間戳）、`cmd`／`bash`（啟動 Chrome 腳本：Windows 用 `cmd` 跑 `.bat`、macOS／Linux 用 `bash` 跑 `.sh`），以及 `Write/Edit/Read(book/** 與 tmp/**)`（讀寫書庫產物與過程檔）。**破壞性的 `rm`／`taskkill` 刻意不放行**，每次問過再做。
+- 順帶預核准流程實際會用到的 Bash 指令：`uv run`／`uv sync`（跑 server/腳本）、`curl`（探 CDP 埠）、`mkdir`（建暫存夾）、`ls`（列檔）、`cmd`／`bash`（啟動 Chrome 腳本：Windows 用 `cmd` 跑 `.bat`、macOS／Linux 用 `bash` 跑 `.sh`），以及 `Write/Edit/Read(book/** 與 tmp/**)`（讀寫書庫產物與過程檔）。**破壞性的 `rm`／`taskkill` 刻意不放行**，每次問過再做。
 - 設定在**新 session 才生效**（這個 session 內若還會問，重啟／`/reload-plugins` 後就不會了）。
 - 註：工具識別名是 `mcp__plugin_<plugin>_<server>__<tool>`（plugin-provided MCP 的命名，見 plugin-tutorial §4.5）——和「專案級 `.mcp.json`」的 `mcp__<server>__…` 不同，別把那個寫進來。
 

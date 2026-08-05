@@ -21,11 +21,12 @@ uv sync --project "<PLUGIN_DIR>"
 若 `uv` 不存在 → 請使用者先跑 `/readbot:setup`。
 
 ### 3. 啟動（背景執行），書庫指向使用者專案
-伺服器會持續執行（長時間阻塞），請在**背景**跑，再告訴使用者已在 http://localhost:5050 啟動：
+伺服器會持續執行（長時間阻塞），請在**背景**跑：
 ```bash
 uv run --project "<PLUGIN_DIR>" python "<PLUGIN_DIR>/server.py" --book-dir "$(pwd)/book"
 ```
 （`<PLUGIN_DIR>` 換成步驟 1 的實際絕對路徑。前端從 plugin 服務，書庫讀使用者專案 `./book`。）
+**告知使用者網址前，先探 `/api/health` 確認真的起來**（`server.py` 遇 port 被占會印錯誤並 `exit`，別誤報成功）：`curl -s http://localhost:5050/api/health` 回 `{"ok": true}` 才算成功；沒回應＝多半 port 被占 → 改 `--port` 重跑、再告知實際網址。
 
 ## 注意
 
