@@ -1,11 +1,11 @@
 /* ============================================================
-   Ad Generator — Design System（Linear / Modern 暗色）
+   Readbot — Design System（Linear / Modern 暗色）
    token 驅動、可組裝的 CSS 元件庫。做 UI widget = 套這些 class。
    ------------------------------------------------------------
    用法：
-     <div class="ds-card ds-card--interactive p-5"> … </div>
+     <div class="ds-card p-5"> … </div>
      <button class="ds-btn ds-btn--primary">送出</button>
-     <span class="ds-badge ds-badge--win">贏家</span>
+     <span class="ds-badge">徽章</span>
    排版/間距仍用 Tailwind utility；顏色與質感用本檔的 token 與 ds-* 元件。
    改主題只動 :root 的 token，元件全部跟著變。
    ============================================================ */
@@ -139,12 +139,6 @@ body {
   box-shadow: var(--shadow-card);
   transition: transform 0.25s var(--ease-expo), border-color 0.25s var(--ease-expo), box-shadow 0.25s var(--ease-expo);
 }
-.ds-card--interactive { cursor: pointer; }
-.ds-card--interactive:hover {
-  transform: translateY(-4px);
-  border-color: var(--border-hover);
-  box-shadow: var(--shadow-card-hover);
-}
 
 /* ============================================================
    Buttons
@@ -212,29 +206,16 @@ body {
   background: rgba(94, 106, 210, 0.12);
   color: var(--accent-bright);
 }
-.ds-badge--win {
-  border-color: rgba(52, 211, 153, 0.35);
-  background: rgba(16, 185, 129, 0.14);
-  color: #34d399;
-}
 
 /* ============================================================
-   Links / Modal / Divider
+   Modal
    ============================================================ */
-.ds-link { color: var(--accent-bright); }
-.ds-link:hover { color: #fff; text-decoration: underline; }
-
 .ds-backdrop { background: rgba(2, 2, 3, 0.7); backdrop-filter: blur(8px); }
 .ds-modal {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--r-2xl);
   box-shadow: var(--shadow-card-hover);
-}
-
-.ds-divider {
-  height: 1px;
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
 }
 
 /* ============================================================

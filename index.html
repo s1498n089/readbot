@@ -46,7 +46,7 @@
     <div class="relative z-10 max-w-3xl mx-auto px-6 pt-8 pb-10 text-center">
       <span class="ds-badge inline-flex items-center gap-2 mb-5">
         <span class="w-1.5 h-1.5 rounded-full" style="background: var(--accent-bright); box-shadow: 0 0 8px var(--accent-bright);"></span>
-        翻譯・重點・學習小卡
+        翻譯・重點・陪讀
       </span>
       <h1 class="text-3xl sm:text-4xl font-bold leading-[1.15] tracking-tight">
         看你的書，翻成<span class="bg-clip-text text-transparent"
@@ -109,7 +109,7 @@
                   <button v-for="l in langs" :key="l" @click="pickLang(l)"
                           class="ds-btn text-xs px-2.5 py-1" :class="lang === l ? 'ds-btn--primary' : 'ds-btn--ghost'">{{ l }}</button>
                 </div>
-                <div class="flex items-center gap-1.5">
+                <div v-if="fmts.length > 1" class="flex items-center gap-1.5">
                   <span class="ds-label">格式</span>
                   <button v-for="f in fmts" :key="f" @click="pickFmt(f)"
                           class="ds-btn text-xs px-2.5 py-1" :class="fmt === f ? 'ds-btn--primary' : 'ds-btn--ghost'">{{ f }}</button>
