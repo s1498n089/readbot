@@ -24,6 +24,7 @@ book/<書>/
   output/<語言>/ipynb/note/ch<n>/ch<n>.ipynb   每小節一個重點的章節筆記
 ```
 - 過程檔（PDF 逐頁 PNG）→ `tmp/<書>/pages/`（gitignored）；產物只進 `book/<書>/output/`。
+- **個人風格檔**（專案根、gitignored、可選）：`note-style.md`（筆記口味／結構，`digitize-book`／`tutor` 寫筆記前讀）、`tutorial-style.md`（陪讀教法，`tutor` 陪讀前讀）；**缺檔時 skill 先問使用者、不寫死預設**（見各 skill）。
 
 ## 環境與指令（uv）
 

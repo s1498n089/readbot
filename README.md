@@ -32,16 +32,25 @@ book/<書>/
 
 ### `config.json` schema
 
-每本書一份；權威定義＝`server.py` 的 `DEFAULT_CONFIG`＋`VALID_*`。缺檔／缺欄／非法值都安全——server 讀取時自動補預設、正規化（`_read_config`），使用者手動編輯壞了也不會掛。
+每本書一份；缺檔／缺欄／非法值都安全——server 讀取時自動補預設、正規化（`_read_config`），手動編輯壞了也不會掛。**目前實際支援的值如下表**（`mode`／`image_model` 是保留欄位——`server.py` 的 `VALID_*` 為相容仍收舊值，但功能上只走下表）。
 
-| 欄位 | 型別 | 合法值 | 預設 | 誰寫入 |
+| 欄位 | 型別 | 目前支援值 | 預設 | 誰寫入 |
 |---|---|---|---|---|
-| `schema_version` | int | `1` | `1` | server（讀寫時自動補；保留給未來遷移） |
-| `mode` | str | `"md"` \| `"ipynb"` | `"ipynb"` | 保留欄位——server 仍收、但 UI 未開放、skill 一律產 ipynb（未來要加格式時再啟用） |
-| `image_model` | str | `"chatgpt"` \| `"claude_code"` | `"chatgpt"` | 保留欄位——server 仍收、但 UI 未開放、skill 一律走 ChatGPT（未來換生圖模型時再啟用） |
 | `task` | str | `"translate"` \| `"transcribe"` | `"translate"` | 使用者（看板或 digitize-book 對話中選） |
 | `title`／`author` | str | 自由字串 | `""` | digitize-book（抽自書的前幾頁） |
 | `cover` | str \| null | 檔名（相對 `output/`） | `null` | digitize-book（通常 `"cover.png"`） |
+| `mode` | str | 只 `"ipynb"` | `"ipynb"` | 保留欄位：UI 不開放、skill 一律 ipynb（留給未來擴充格式） |
+| `image_model` | str | 只 `"chatgpt"` | `"chatgpt"` | 保留欄位：UI 不開放、skill 一律 ChatGPT（留給未來換生圖模型） |
+| `schema_version` | int | `1` | `1` | server 自動補（保留給未來遷移） |
+
+### 個人風格檔（專案根，可選）
+
+放在**專案根**、因人而異、已 gitignore（不隨 plugin 散布）：
+
+- `note-style.md` —— 你要的**筆記口味與結構**（`digitize-book`／`tutor` 寫筆記前先讀、照它寫）。
+- `tutorial-style.md` —— 你要的**陪讀教法**（`tutor` 陪讀前先讀、照它教）。
+
+**沒有時 skill 會先問你**「要怎麼整理重點／怎麼被陪讀」，再照你說的做（可順手幫你存成該檔，之後不必再問）。
 
 ## 用法
 
