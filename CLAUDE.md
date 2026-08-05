@@ -2,14 +2,14 @@
 
 ## 這是什麼
 
-**Readbot** —— 把 Claude Code 變成讀書機器人的 plugin：**把書數位化（可選翻譯）、整理重點、陪讀問答**（學習小卡規劃中）。
+**Readbot** —— 把 Claude Code 變成讀書機器人的 plugin：**把書數位化（可選翻譯）、整理重點、陪讀問答**。
 核心是 `digitize-book` skill：把 `book/<書>/src` 的 PDF／照片**逐頁轉圖 → 多模態讀 → 翻成繁中或原文照錄 → 寫成 ipynb 產物 ＋ 每小節重點筆記 ＋ 截出插圖**。
 
 組成：
 - plugin manifest（`.claude-plugin/`，repo 自己當 marketplace）。
 - 四個 skill：`digitize-book`（核心，數位化／翻譯）、`tutor`（陪讀：回答使用者的章節問題＋把學到的重點補進該章 note，只增補不改本文）、`serve`（開看板）、`setup`（裝 uv＋Node＋CDP 瀏覽器）。
 - **唯讀看板**：Flask（`server.py`）+ Vue 3 CDN（`index.html`／`frontend/`），掃 `book/` 當清單、顯示 `output/`（本文／筆記兩檢視）。
-- 內建 Playwright MCP（`.mcp.json`）——CDP 核心管道：之後要翻譯的「書」也可能是線上文件（見 `docs/cdp-基本觀念.md`）。
+- 內建 Playwright MCP（`.mcp.json`）——CDP 核心管道：digitize-book 用它接管 ChatGPT 做裁圖／生譯圖（見 `docs/cdp-基本觀念.md`）。
 
 ## 資料模型（book/，在專案根）
 

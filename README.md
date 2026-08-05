@@ -1,6 +1,6 @@
 # Readbot — 讀書機器人（Claude Code plugin）
 
-把 Claude Code 裝上這包 plugin，就變身讀書機器人：**把書數位化（可選翻譯）、整理重點、陪讀問答**（學習小卡規劃中）。
+把 Claude Code 裝上這包 plugin，就變身讀書機器人：**把書數位化（可選翻譯）、整理重點、陪讀問答**。
 核心是 `digitize-book`：把書（PDF／照片）**逐頁轉圖 → 多模態讀 → 翻成繁中或原文照錄 → 產出 jupyter（ipynb）＋ 每小節重點筆記 ＋ 截出插圖**；使用者再用看板檢視、用 `tutor` 陪讀。
 
 ## 專案內容
@@ -11,7 +11,7 @@
 | `skills/digitize-book` | **核心**：把 `book/<書>/src` 數位化／翻成 `output/` 的 ipynb ＋ 章節筆記 ＋ 插圖 |
 | `skills/tutor` | 陪讀：回答使用者的章節問題、把學到的重點增補進該章筆記（只增補、不改本文） |
 | `skills/serve` | 開看板 → http://localhost:5050（看 `book/` 清單與各書 `output/`） |
-| `skills/setup` | 裝環境：uv ＋ Node ＋ **CDP 瀏覽器**（ChatGPT 截圖／線上文件用） |
+| `skills/setup` | 裝環境：uv ＋ Node ＋ **CDP 瀏覽器**（ChatGPT 截圖用） |
 | `.mcp.json` | 內建 Playwright MCP（CDP 接管 9222 的 Chrome），隨安裝自動註冊 |
 | `server.py`／`index.html`／`frontend/` | Flask + Vue 3（CDN）唯讀看板 ＋ 設計系統 `theme.css` |
 | `templates/`、`docs/` | CDP 啟動腳本範本；plugin 教學／CDP 入門／設計系統 spec |
@@ -52,7 +52,7 @@ book/<書>/
 
 ## 為什麼要 CDP
 
-讀書機器人會用 CDP 接管一台**使用者已登入**的 Chrome 來操作線上內容（例如 ChatGPT 截圖、要讀的線上文件）——用使用者的登入、不另外打 API。透過內建 Playwright MCP 連這台 Chrome。不懂 CDP？看 **[docs/cdp-基本觀念.md](docs/cdp-基本觀念.md)**。
+讀書機器人會用 CDP 接管一台**使用者已登入**的 Chrome 去操作 ChatGPT（裁圖／生譯圖）——用使用者的登入、不另外打 API。透過內建 Playwright MCP 連這台 Chrome。不懂 CDP？看 **[docs/cdp-基本觀念.md](docs/cdp-基本觀念.md)**。
 
 ## 開發者：直接在 repo 跑
 
