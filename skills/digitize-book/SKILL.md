@@ -163,7 +163,7 @@ PY
      ```
      - ⚠️ **收成前一定要先排除「本回合剛上傳的原圖」**（範本的 `UPLOADED`）：filter 掃的是全部 `main img`、**含你剛上傳那張**；若成品還沒生好、而上傳圖檔名剛好命中 `cropped`／`_zh` 等關鍵字，`imgs.at(-1)` 會回傳**上傳圖**、函式照樣回報 `OK`，於是**靜默把原圖當成品存下去**（§5C 尤危險：譯圖會存成與原圖一模一樣、無錯誤訊息）。上傳圖的 alt＝你上傳的檔名——別靠命名慣例擋，要在候選裡明確排除它。
      - **落點別預設**：Playwright **不一定**攔得到 `.browser/out/`（實測常沒攔到、`a.download` 落到瀏覽器預設下載夾如 `~/Downloads`；檔名底線 `_` 是否被改寫也視環境而定）。→ 下載後**實際 `ls` 找檔**：先看 `.browser/out/`、沒有再看瀏覽器下載夾，找到就用 **`mv`**（不是 `cp`）搬到 `…/images/figX-Y.png`，**別在下載夾留檔**（使用者要求圖檔別堆在下載夾）。
-     - ⚠️ **同一台 Chrome 連續下載可能被擋（實測約 6 張後）**：真被擋就改**不經下載夾**收成，但**別用 `browser_evaluate` 的回傳值把 base64 帶回來**（一張 700KB PNG≈95 萬字元，會塞爆 context、還可能被截斷）。正解：
+     - ⚠️ **同一台 Chrome 連續下載可能被 Chrome 攔阻**（「同站短時間下載多檔」的保護；**門檻視 Chrome 版本／設定而定、別當固定張數**）。**觸發依據是「下載這條路失敗」**（`mv` 前在 `.browser/out/` 與瀏覽器下載夾都 `ls` 不到剛下載的檔），不是去數張數；一旦失敗就改**不經下載夾**收成，但**別用 `browser_evaluate` 的回傳值把 base64 帶回來**（一張 700KB PNG≈95 萬字元，會塞爆 context、還可能被截斷）。正解：
        - ① evaluate 內 `fetch(img.src)`→blob→轉 base64，`return` 那串 base64；
        - ② **傳 `browser_evaluate` 的 `filename` 參數**（給了 filename ＝把回傳值**寫成檔、不灌回 context**；接受相對專案 root 的子路徑）落到 `.browser/tmp/<name>_b64.txt`；
        - ③ 本機讀該檔 → `base64.b64decode` → 寫成 `…/images/figX-Y.png`。⚠️ **`filename` 寫出的檔帶 UTF-8 BOM（外層有時多包一對 `"`）**，本機要用 `open(..., encoding="utf-8-sig").read().strip().strip('"')` 讀（用 `utf-8` 讀會因 BOM 誤判內容）；
