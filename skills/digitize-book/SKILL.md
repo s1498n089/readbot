@@ -148,7 +148,9 @@ PY
    - **收成：`fetch(img.src)` 取 blob → `a.download` 觸發下載 → 找到檔案搬進 images/**。範本：
      ```js
      async () => {
+       const UPLOADED = 'crude_figX-Y.png';                // ← 換成本回合 browser_file_upload 的那張粗胚圖檔名
        const imgs = [...document.querySelectorAll('main img')]
+         .filter(i => i.alt !== UPLOADED)                  // 先排除自己剛上傳的原圖（見下方 ⚠️）
          .filter(i => /輸出圖像|已產生圖像|cropped|translated|_zh|繁體/.test(i.alt));  // 認三種成品 alt（含檔案卡檔名）
        const img = imgs.at(-1);                            // GPT 常迭代多版，取最後一張
        if (!img) return 'NOT_READY';                       // 還在生成／只剩檔案卡，下一輪再探或點檔案卡
@@ -159,8 +161,13 @@ PY
        return 'OK ' + img.naturalWidth + 'x' + img.naturalHeight;
      }
      ```
+     - ⚠️ **收成前一定要先排除「本回合剛上傳的原圖」**（範本的 `UPLOADED`）：filter 掃的是全部 `main img`、**含你剛上傳那張**；若成品還沒生好、而上傳圖檔名剛好命中 `cropped`／`_zh` 等關鍵字，`imgs.at(-1)` 會回傳**上傳圖**、函式照樣回報 `OK`，於是**靜默把原圖當成品存下去**（§5C 尤危險：譯圖會存成與原圖一模一樣、無錯誤訊息）。上傳圖的 alt＝你上傳的檔名——別靠命名慣例擋，要在候選裡明確排除它。
      - **落點別預設**：Playwright **不一定**攔得到 `.browser/out/`（實測常沒攔到、`a.download` 落到瀏覽器預設下載夾如 `~/Downloads`；檔名底線 `_` 是否被改寫也視環境而定）。→ 下載後**實際 `ls` 找檔**：先看 `.browser/out/`、沒有再看瀏覽器下載夾，找到就用 **`mv`**（不是 `cp`）搬到 `…/images/figX-Y.png`，**別在下載夾留檔**（使用者要求圖檔別堆在下載夾）。
-     - ⚠️ **同一台 Chrome 連續下載可能被擋（實測約 6 張後）**：真被擋就改**不經下載夾**收成——頁內 `fetch(img.src)` 轉 base64 取回、本機解碼直接寫成 `images/figX-Y.png`（完全不碰下載夾）。
+     - ⚠️ **同一台 Chrome 連續下載可能被擋（實測約 6 張後）**：真被擋就改**不經下載夾**收成，但**別用 `browser_evaluate` 的回傳值把 base64 帶回來**（一張 700KB PNG≈95 萬字元，會塞爆 context、還可能被截斷）。正解：
+       - ① evaluate 內 `fetch(img.src)`→blob→轉 base64，`return` 那串 base64；
+       - ② **傳 `browser_evaluate` 的 `filename` 參數**（給了 filename ＝把回傳值**寫成檔、不灌回 context**；接受相對專案 root 的子路徑）落到 `.browser/tmp/<name>_b64.txt`；
+       - ③ 本機讀該檔 → `base64.b64decode` → 寫成 `…/images/figX-Y.png`。⚠️ **`filename` 寫出的檔帶 UTF-8 BOM（外層有時多包一對 `"`）**，本機要用 `open(..., encoding="utf-8-sig").read().strip().strip('"')` 讀（用 `utf-8` 讀會因 BOM 誤判內容）；
+       - ④ 中繼的 `_b64.txt` 收工前清掉（`.browser/tmp/` 已 gitignore、別留在 root）。
    - **`alt`／檔案卡是完成的主判準**；尺寸（naturalWidth）只當 fallback——譯圖尺寸常與原圖幾乎相同，比大小會誤抓（image-gen 版還常 `naturalWidth=0`，但 `fetch(img.src)` 照樣拿得到，見 §5C）。
 6. ⚠️ 餵的大略圖若含「頁緣細框線」，ChatGPT 也會框進去——想更乾淨就餵「已不含頁緣線」的較緊區域。
 
