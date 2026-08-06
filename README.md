@@ -3,6 +3,33 @@
 把 Claude Code 裝上這包 plugin，就變身讀書機器人：**把書數位化（可選翻譯）、整理重點、陪讀問答**。
 核心是 `digitize-book`：把書（PDF／照片）**逐頁轉圖 → 多模態讀 → 翻成繁中或原文照錄 → 產出 jupyter（ipynb）＋ 每小節重點筆記 ＋ 截出插圖**；使用者再用看板檢視、用 `tutor` 陪讀。
 
+## 安裝
+
+```text
+/plugin marketplace add <帳號>/<repo>    # 加入 marketplace
+/plugin install readbot@readbot         # 安裝
+```
+
+（想直接在 repo 原始碼上跑、或要改這包 → 見文末「[開發者：直接在 repo 跑](#開發者直接在-repo-跑)」。）
+
+## 開始使用
+
+裝好 plugin 後，第一次照這個順序走：
+
+1. **`/readbot:setup`** —— 首次備環境：裝 uv ＋ Node，並備好一台 **CDP 瀏覽器**、登入 ChatGPT（裁圖／生譯圖要用，原理見下方「為什麼要 CDP」）。
+2. **放書進 `book/<書名>/src/`**（一個 PDF，或照片 `src/ch1/*.png`）。書資料夾建議用看板「＋ 新增書」建（會一併生成 `config.json`／`progress.md`）；手動建也行（`config.json` 缺檔視同預設）。
+3. **`/readbot:digitize-book`** —— 跟 Claude 說要做第幾章、選任務（翻譯／數位化）。
+4. **`/readbot:serve`** —— 開看板（http://localhost:5050），選書看 `output/`（本文／筆記兩檢視）。
+5. **`/readbot:tutor`** —— 陪讀做好的章節：Claude 回答問題、把學到的重點補進該章筆記。
+
+## 為什麼要 CDP
+
+讀書機器人會用 CDP 接管一台**使用者已登入**的 Chrome 去操作 ChatGPT（裁圖／生譯圖）——用使用者的登入、不另外打 API。透過內建 Playwright MCP 連這台 Chrome。不懂 CDP？看 **[docs/cdp-基本觀念.md](docs/cdp-基本觀念.md)**。
+
+---
+
+**以下是參考**——第一次上手看完上面就夠了，想深入或要改這包再往下看。
+
 ## 專案內容
 
 | 項目 | 說明 |
@@ -52,17 +79,6 @@ book/<書>/
 
 **沒有時 skill 會先問你**「要怎麼整理重點／怎麼被陪讀」，再照你說的做（可順手幫你存成該檔，之後不必再問）。
 
-## 用法
-
-1. 把書放進 `book/<書名>/src/`（一個 PDF，或照片 `src/ch1/*.png`）。書資料夾建議用看板「＋ 新增書」建（會一併生成 `config.json`／`progress.md`）；手動建也行（`config.json` 缺檔視同預設）。
-2. 對話裡 `/readbot:digitize-book` —— 跟 Claude 說要做第幾章、選任務（翻譯／數位化）。
-3. `/readbot:serve` —— 開看板，選書看 `output/`（本文／筆記兩檢視）。
-4. `/readbot:tutor` —— 陪讀做好的章節：Claude 回答問題、把學到的重點補進該章筆記。
-
-## 為什麼要 CDP
-
-讀書機器人會用 CDP 接管一台**使用者已登入**的 Chrome 去操作 ChatGPT（裁圖／生譯圖）——用使用者的登入、不另外打 API。透過內建 Playwright MCP 連這台 Chrome。不懂 CDP？看 **[docs/cdp-基本觀念.md](docs/cdp-基本觀念.md)**。
-
 ## 開發者：直接在 repo 跑
 
 需求：[**uv**](https://docs.astral.sh/uv/)。
@@ -92,12 +108,4 @@ uv run --project <readbot 根> python <readbot 根>/server.py --book-dir <書庫
 
 （平常用 `/readbot:serve` 開看板即可，這段是要手動跑或除錯時用。）
 
-## 安裝為 plugin
-
-```text
-/plugin marketplace add <帳號>/<repo>    # 加入 marketplace
-/plugin install readbot@readbot         # 安裝
-```
-
-裝好後：`/readbot:setup`（首次備環境）→（放書進 `book/<書>/src/`）→ `/readbot:digitize-book` → `/readbot:serve` → `/readbot:tutor`（陪讀）。
 製作機制與踩坑見 **[docs/plugin-tutorial.md](docs/plugin-tutorial.md)**。
