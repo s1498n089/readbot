@@ -76,12 +76,11 @@ claude --plugin-dir ./         # 以 plugin 形式載入 skills（/readbot:<skil
 上面是「**cwd 剛好在 repo 根**」的簡寫。**cwd 不在 repo**（或想指定別的書庫）就把路徑寫全——`--project` 指 **plugin 根**（才吃得到 plugin 的 venv，裡面才有 Flask／PyMuPDF），`server.py` 與 `--book-dir` 都給絕對路徑：
 
 ```bash
-# 從任何位置都能跑
-uv run --project /path/to/readbot python /path/to/readbot/server.py --book-dir /path/to/book
-
-# Windows（PowerShell）同理
-uv run --project C:\path\to\readbot python C:\path\to\readbot\server.py --book-dir C:\path\to\readbot\book
+# 從任何位置都能跑（三個路徑都換成你的實際絕對路徑）
+uv run --project <readbot 根> python <readbot 根>/server.py --book-dir <書庫目錄>
 ```
+
+（Windows 路徑用反斜線 `C:\…\readbot` 或正斜線皆可——PowerShell 兩者都接受。）
 
 `server.py` 的參數：
 
