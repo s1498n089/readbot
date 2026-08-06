@@ -43,7 +43,7 @@ book/<書>/
 | `image_model` | str | 只 `"chatgpt"` | `"chatgpt"` | 保留欄位：UI 不開放、skill 一律 ChatGPT（留給未來換生圖模型） |
 | `schema_version` | int | `1` | `1` | server 自動補（保留給未來遷移） |
 
-### 個人風格檔（專案根，可選）
+### 個人風格檔（專案根）
 
 放在**專案根**、因人而異、已 gitignore（不隨 plugin 散布）：
 
