@@ -92,6 +92,13 @@ uv sync --project "<PLUGIN_DIR>"
    cp "<PLUGIN_DIR>/templates/launch-chrome-cdp.sh"  "$(pwd)/.browser/"   # macOS / Linux
    ```
    提醒使用者把 `.browser/` 加進自己專案的 `.gitignore`（裡面有登入態）。
+
+   ⚠️ **`.browser/` 已經有腳本時別直接跳過，先跟 template 比對**——這份是「複製一次就分家」的個人副本，template 之後改版它不會自動跟上，會一直印過期的指示（實際踩過：舊副本仍寫「登入後要重啟 Claude Code」，但下面步驟 4 早就不需要了）：
+   ```bash
+   diff "<PLUGIN_DIR>/templates/launch-chrome-cdp.bat" "$(pwd)/.browser/launch-chrome-cdp.bat"   # Windows（.sh 同理）
+   ```
+   - **相同** → 跳過，不用動。
+   - **不同** → 把 diff 拿給使用者看，並說明兩種可能：① template 更新了；② 他自己改過（最常見是手動把 `CHROME` 指到非預設的 chrome.exe 路徑）。**徵得同意再覆蓋**；若含他的客製就別整份蓋掉，只把 template 的新內容併進去。
 2. **由「Claude」幫使用者啟動那台 Chrome**（不必使用者手動雙擊——Claude 跑腳本＝等同人親手雙擊）：
    - Windows：`cmd //c "$(pwd)/.browser/launch-chrome-cdp.bat"`
    - macOS／Linux：`bash "$(pwd)/.browser/launch-chrome-cdp.sh"`
