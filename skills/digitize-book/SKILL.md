@@ -34,7 +34,7 @@ PDF／照片進來後、開始讀之前的準備：把頁面轉成圖（2a），
 把**這次要處理的頁範圍**（頁範圍先由 §3 分章決定；整本一次 render 只在你確實要做整本時才需要）render 成 ~200 DPI PNG，存 `tmp/<書>/pages/`（gitignored 過程檔）：
 ```bash
 # 末兩個參數＝起始頁、結束頁（1-based）；都不給＝整本
-uv run --project "<PLUGIN_DIR>" python - "book/<書>/src/<書>.pdf" "tmp/<書>/pages" <起始頁> <結束頁> <<'PY'
+uv run --project "<PLUGIN_DIR>" python - "book/<書>/src/<書>.pdf" "tmp/<書>/pages" "<起始頁>" "<結束頁>" <<'PY'
 import sys, os, fitz
 src, out = sys.argv[1], sys.argv[2]
 p0 = int(sys.argv[3]) if len(sys.argv) > 3 else 1     # 起始頁；不給＝從第 1 頁
