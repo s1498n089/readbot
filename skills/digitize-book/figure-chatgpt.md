@@ -46,7 +46,7 @@
      async () => {
        const UPLOADED = 'crude_figX-Y.png';                // ← 換成本回合 browser_file_upload 的那張粗胚圖檔名
        // 主判準＝排除本回合上傳圖後取最後一張候選；關鍵字只降為「輔助優選」（成品檔名每次不同、白名單追不完，漏一個變體會整張抓不到還誤報還沒好）
-       const cands = [...document.querySelectorAll('main img')].filter(i => i.alt && i.alt !== UPLOADED);  // 排除自己剛上傳的原圖（見下方 ⚠️）
+       const cands = [...document.querySelectorAll('main img')].filter(i => i.alt && i.alt !== UPLOADED);  // 排除剛上傳的原圖（見⚠️）。走檔案卡那條路收成時，把 'main img' 改成 'img'（預覽在 modal、不在 main）
        const hit = cands.filter(i => /輸出圖像|已產生圖像|cropped|translated|_zh|繁體/.test(i.alt));
        const img = (hit.length ? hit : cands).at(-1);       // 命中關鍵字用命中的最後一張、否則退回全部候選的最後一張
        if (!img) return 'NOT_READY';                       // 還在生成／只剩檔案卡，下一輪再探或點檔案卡

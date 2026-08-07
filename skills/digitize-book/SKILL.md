@@ -31,16 +31,20 @@ description: 把 book/<書>/src 裡的書（PDF 或分章照片）用多模態�
 PDF／照片進來後、開始讀之前的準備：把頁面轉成圖（2a），第一次還要建書卡 metadata（2b）。
 
 ### 2a. PDF → 逐頁 PNG（PyMuPDF；照片來源跳過此步）
-把每頁 render 成 ~200 DPI PNG，存 `tmp/<書>/pages/`（gitignored 過程檔）：
+把**這次要處理的頁範圍**（頁範圍先由 §3 分章決定；整本一次 render 只在你確實要做整本時才需要）render 成 ~200 DPI PNG，存 `tmp/<書>/pages/`（gitignored 過程檔）：
 ```bash
-uv run --project "<PLUGIN_DIR>" python - "book/<書>/src/<書>.pdf" "tmp/<書>/pages" <<'PY'
+# 末兩個參數＝起始頁、結束頁（1-based）；都不給＝整本
+uv run --project "<PLUGIN_DIR>" python - "book/<書>/src/<書>.pdf" "tmp/<書>/pages" <起始頁> <結束頁> <<'PY'
 import sys, os, fitz
 src, out = sys.argv[1], sys.argv[2]
+p0 = int(sys.argv[3]) if len(sys.argv) > 3 else 1     # 起始頁；不給＝從第 1 頁
+p1 = int(sys.argv[4]) if len(sys.argv) > 4 else 0     # 結束頁；0＝到最後一頁
 os.makedirs(out, exist_ok=True)
 doc = fitz.open(src)
-for i, page in enumerate(doc, 1):
-    page.get_pixmap(dpi=200).save(os.path.join(out, f"p{i:04d}.png"))
-print(f"rendered {doc.page_count} pages -> {out}")
+p1 = p1 or doc.page_count
+for i in range(p0, p1 + 1):
+    doc[i - 1].get_pixmap(dpi=200).save(os.path.join(out, f"p{i:04d}.png"))
+print(f"rendered pages {p0}-{p1} -> {out}")
 PY
 ```
 
@@ -148,16 +152,19 @@ PY
   - **靜態掃**：`grep` 產出的 ipynb 有沒有 marked 不吃的語法（最常見 `[^` 註腳；見上一條）。
   - **看渲染（CDP）**：開 `http://localhost:5050`，在頁面 context 跑看板的全域函式 `renderIpynb(text, base)` 再驗產出的 DOM（比截圖可靠——文件很長時 headless 截圖深處會全黑）。⚠️ **第一參數吃「ipynb 原始 JSON 字串」、不是 parse 過的物件**——傳物件會回『（無法解析的 ipynb）』佔位**且不報錯**，最容易被誤判成產物壞掉。最小可跑片段（填 `id`／`ch`；驗筆記把 `kind` 改 `'note'`）：
     ```js
-    const id = '<書資料夾名>', lang = 'zh_tw', ch = 'ch3', kind = 'text';
-    const q = new URLSearchParams({ lang, fmt: 'ipynb', ch, kind });
-    const text = await (await fetch(`/api/books/${encodeURIComponent(id)}/doc?${q}`)).text();  // ← 原始 JSON 字串，別 JSON.parse
-    const dir = kind === 'note' ? `${lang}/ipynb/note/${ch}` : `${lang}/ipynb/${ch}`;
-    const base = `/api/books/${encodeURIComponent(id)}/output/${dir}/`;
-    const d = document.createElement('div'); d.innerHTML = renderIpynb(text, base);
-    console.log('katex', d.querySelectorAll('.katex').length, 'table', d.querySelectorAll('table').length,
-                'img', d.querySelectorAll('img').length,
-                'footnote殘', (d.textContent.match(/\[\^/g) || []).length,   // 應 0
-                'dollar殘', (d.textContent.match(/\$/g) || []).length);       // 應 0（數學都被 KaTeX 接走）
+    // 當「有回傳值的 async 函式」跑（如 browser_evaluate）——把統計 return 出來、別用 console.log（自動化拿不到 console）
+    async () => {
+      const id = '<書資料夾名>', lang = 'zh_tw', ch = 'ch3', kind = 'text';   // 填實際值；驗筆記把 kind 改 'note'
+      const q = new URLSearchParams({ lang, fmt: 'ipynb', ch, kind });
+      const text = await (await fetch(`/api/books/${encodeURIComponent(id)}/doc?${q}`)).text();  // 原始 JSON 字串，別 JSON.parse
+      const dir = kind === 'note' ? `${lang}/ipynb/note/${ch}` : `${lang}/ipynb/${ch}`;
+      const base = `/api/books/${encodeURIComponent(id)}/output/${dir}/`;
+      const d = document.createElement('div'); d.innerHTML = renderIpynb(text, base);
+      return { katex: d.querySelectorAll('.katex').length, table: d.querySelectorAll('table').length,
+               img: d.querySelectorAll('img').length,
+               footnote殘: (d.textContent.match(/\[\^/g) || []).length,   // 應 0
+               dollar殘: (d.textContent.match(/\$/g) || []).length };      // 應 0（數學都被 KaTeX 接走）
+    }
     ```
     沒 CDP 就請使用者幫看一眼。**「組完 ipynb」≠「顯示正確」——這步專抓 marked 不吃的語法（如 `[^` 註腳）、數學沒被 KaTeX 接到、圖斷鏈等。**
 
