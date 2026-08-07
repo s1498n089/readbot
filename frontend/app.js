@@ -64,6 +64,7 @@ createApp({
       docHtml: '', docLoading: false,
       transFigs: [],      // 這章有譯圖的檔名（figX-Y.<語言碼>.png）；給 enhanceFigures 用
       tasks: [{ v: 'translate', label: '翻譯' }, { v: 'transcribe', label: '數位化' }],
+      imageModels: [{ v: 'codex', label: 'Codex' }, { v: 'chatgpt', label: 'ChatGPT' }],
       libraryOpen: false,  // 書庫 modal（書卡列表）
       createBox: { show: false, name: '', error: '', busy: false },  // 新增書 modal
       deleteBox: { show: false, book: null, busy: false, error: '' },  // 刪除書確認 modal
@@ -179,7 +180,7 @@ createApp({
       }
     },
 
-    // ----- 每本書設定（目前只設 task 任務；mode／image_model 為保留欄位、UI 未開放）→ PUT 寫進 config.json -----
+    // ----- 每本書設定（task 任務、image_model 截圖做法；mode 仍為保留欄位）→ PUT 寫進 config.json -----
     async setConfig(key, val) {
       if (!this.book || !this.book.config || this.book.config[key] === val) return;
       this.book.config[key] = val;  // 樂觀更新

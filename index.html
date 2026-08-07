@@ -90,6 +90,11 @@
               <button v-for="t in tasks" :key="t.v" @click="setConfig('task', t.v)"
                       class="ds-btn text-xs px-2.5 py-1" :class="book.config.task === t.v ? 'ds-btn--primary' : 'ds-btn--ghost'">{{ t.label }}</button>
             </div>
+            <div class="flex items-center gap-1.5">
+              <span class="ds-label">截圖</span>
+              <button v-for="m in imageModels" :key="m.v" @click="setConfig('image_model', m.v)"
+                      class="ds-btn text-xs px-2.5 py-1" :class="book.config.image_model === m.v ? 'ds-btn--primary' : 'ds-btn--ghost'">{{ m.label }}</button>
+            </div>
             <span v-if="configSaved" class="ds-muted text-xs">✓ 已存</span>
             </div>
           </div>
