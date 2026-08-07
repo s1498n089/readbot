@@ -32,5 +32,5 @@ codex exec -m gpt-5.6-sol -c model_reasoning_effort="max" --sandbox danger-full-
 - 收成＝codex 已直接寫出 `figX-Y.<語言碼>.png`——直接接主 §5C 的**文字專項驗收**（每張都做）。
 
 ## 並行 / 收尾
-- **一張一次 `codex exec`**（保守、對應主 §5 精神）。要並行可**同時開多個 `codex exec`（`run_in_background`）**、各自獨立輸入輸出——但**別在一支呼叫裡塞多張**（一次多張的效果尚未實測，先別賭）。
+- **並行：一張一次 `codex exec`，要多做就同時開多個（`run_in_background`）、各自獨立的輸入圖與輸出路徑**——**一次最多先開 3 個**（實測開到 5 個也沒問題，先保守 3、要更多再加）。**但別在單一呼叫裡塞多張**（那是另一回事、效果差，別賭）。
 - **收尾**：清掉 `tmp/` 底下 codex 留的裁切／疊字腳本；確認 **專案根乾淨**（codex 偶爾會在根留 `.py`，`git status` 掃一下）。
