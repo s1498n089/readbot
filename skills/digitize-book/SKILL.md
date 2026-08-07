@@ -119,7 +119,7 @@ PY
 丟「含整張圖的大圖」給 ChatGPT，讓它用視覺＋Python(PIL) 自己裁、回精準成品。透過內建 Playwright MCP 驅動（工具名：dev=`mcp__playwright__*`、安裝後=`mcp__plugin_readbot_playwright__*`）：
 1. **前提**：CDP Chrome 開著且已登入 `chatgpt.com`。沒開先跑 `.browser/launch-chrome-cdp.bat`（見 `/readbot:setup`），確認 `http://127.0.0.1:9222/json/version` 回 200。**接不上（9222 探測失敗、或還沒登入 ChatGPT）→ 停下來，請使用者跑 `/readbot:setup` 步驟 5/6 備好 CDP＋登入 ChatGPT 後再繼續；不本機裁切（裁切、生圖一律走 ChatGPT）。**
 2. **備輸入圖**：從該頁 PNG 切一塊**含整張圖的大略區域**存 `.browser/tmp/`。**🔑 寧可切大、絕不可切小**——這塊「粗胚」只是給 GPT 看的原料，**必須完整含整張圖＋整行圖說**；上下左右多框到正文／頁碼／別張圖**都沒關係**（GPT 之後會精準裁掉），但**只要切到圖或圖說一點點，被切掉的部分 GPT 永遠救不回來、成品必壞**。所以不必精準，寧可連上下內文一起**多框一大圈**。
-3. navigate `https://chatgpt.com/` → 點 composer「＋」(`composer-plus-btn`) → 選單點「**從電腦上傳**」（**文字依 ChatGPT UI 版本而異，找「上傳／從電腦」那一項**，別寫死）→ `browser_file_upload` 那塊大略圖。
+3. navigate `https://chatgpt.com/` → 點 composer「＋」(`composer-plus-btn`) → 選單點「**從電腦上傳**」（**文字依 ChatGPT UI 版本而異，找「上傳／從電腦」那一項**，別寫死）→ `browser_file_upload` 那塊大略圖。備案（選單文字改版時更穩）：跳過選單、直接對頁內隱藏的 `input[type=file]` 上傳。
 4. 在輸入框（`#prompt-textarea`）打**裁切指令**再送出（**送出方式見本步驟末：別按 Enter、也別用 `browser_click`**）。**固定用這個通用範本**（把 `图 X-Y` 換成實際編號；知道圖說全文就一起填進去，幫 ChatGPT 定位更準；英文書改用 `Figure X-Y`）——它已把 §5 的 4 條標準寫進去：
    > 這張圖裡有一張圖「**图 X-Y**」。請用 Python（PIL）把「图 X-Y 那張圖，加上它正下方那整行圖說『**图 X-Y …**』」精準裁切成一張 PNG。要求：
    > - ① 圖外圍那圈細細的**外框邊線要完整保留**、四邊都不可切到它、也不要讓它貼在圖片邊緣。
@@ -142,20 +142,20 @@ PY
      - **②** 最底下的圖說「图 X-Y …」完整嗎、有沒有被切半或缺字？
      - **③** 有沒有含到「圖＋圖說」以外的東西（正文段落、頁眉頁碼、別張圖）？
 
-     逐項回答。**任一項不 OK → 在同對話請它重裁修正、再自檢，三項全過才收成**（別收被切／含雜的版本）。「有沒有切到」是視覺判斷、**GPT 比 Claude 準**；這也能抓到「Claude 餵的大略圖不小心把原圖或圖說切掉」——GPT 會看到截斷痕跡。
+     逐項回答。**任一項不 OK → 在同對話請它重裁修正、再自檢，三項全過才收成**（別收被切／含雜的版本）。⚠️ **自檢只是低成本的第一道篩**——早點抓明顯截斷／夾雜（也能發現 Claude 餵的大略圖切掉了原圖），但**自檢逐項回 OK ≠ 可以免驗**（實測有「回 OK、成品卻少一整塊」的情形）；**真正守門仍是 §5B 執行者逐張回讀（強制）**。
    - **完成訊號＝頁面出現「成品 `<img>`」**，其 `alt` 有**三種**（都算完成、收成要全認）：① PIL／code interpreter 產出＝`輸出圖像`；② image-gen 重繪＝`已產生圖像：…`；③ 從**檔案卡預覽**渲染出來的＝檔名本身（如 `figX-Y_cropped.png`）。生成中時 `main img` 只有 Claude 剛上傳的原圖（alt 是原檔名）。**別靠 stop-button 判斷**——它常殘留、會誤判成「還在生成」。生成通常要 **30–90 秒**（複雜圖 >2 分鐘），所以是「`browser_wait_for` 等 25~40 秒 → `browser_evaluate` 探一次 → 沒圖再等一輪」的**輪詢**，一次沒抓到不代表失敗。
    - **卡死就放棄、別無限等**：若某分頁**一直 busy**（送出鍵持續 `disabled`／停在「正在停止思考」）**且完全沒有任何 assistant 內容**、遠超上面說的正常生成時間（拖到數分鐘、約 10 分鐘還這樣），就當**那個對話卡死**：放棄它、**開全新分頁重送完整指令**（實測重送常就成功）；**別在卡死的對話裡追加訊息**（送不出去），也別枯等。判定以「狀態」為主（busy＋零 assistant 內容），時間只是量級參考。
    - **GPT 已回完（宣稱完成／或報錯）、卻抓不到內嵌 `<img>` 時，分兩路救**（還在生成就繼續輪詢、別急著救）：
-     - **有「檔案卡」→ 點開檔案卡（首選）**：GPT 把成品渲染成一張可下載的「檔案卡」（`main` 內某個 `<button>`、class 含 `group/open-file`、innerText 含 `.png`），此時沒有內嵌 `<img>`。**用 JS 點那個 `<button>`、等約 3 秒**，預覽會把成品渲染成 `<img>`（alt＝檔名，即上面第③種）→ 照樣收成。此時**別泛泛追問「請重新 `display`」**——實測會回同尺寸舊檔或空回應，**點檔案卡才是首選**。
+     - **有「檔案卡」→ 點開檔案卡（首選）**：GPT 把成品渲染成一張可下載的「檔案卡」（`main` 內某個 `<button>`、class 含 `group/open-file`、innerText 含 `.png`），此時沒有內嵌 `<img>`。**用 JS 點那個 `<button>`、等約 3 秒**，預覽會把成品渲染成 `<img>`（alt＝檔名，即上面第③種）→ 照樣收成。⚠️ **這張預覽 `<img>` 開在 modal、不在 `main` 底下**——收成時要把範本的 `main img` 放大成整份 `document.querySelectorAll('img')` 才抓得到。此時**別泛泛追問「請重新 `display`」**——實測會回同尺寸舊檔或空回應，**點檔案卡才是首選**。
      - **連檔案卡都沒有、只留一行 `/mnt/data/…png` 路徑**（或只顯示「發生錯誤、請重試」）→ 成品其實已存在沙盒、只是沒渲染出來。同對話送「我這邊看不到圖，請**直接執行 `display(Image('/mnt/data/…png'))` 重新內嵌一次、不要重做**」（**指名那個路徑**，這跟上面「泛泛追問」不同、可靠）→ 通常一次救回，省下整張重生一輪。
    - **收成：`fetch(img.src)` 取 blob → `a.download` 觸發下載 → 找到檔案搬進 images/**。範本：
      ```js
      async () => {
        const UPLOADED = 'crude_figX-Y.png';                // ← 換成本回合 browser_file_upload 的那張粗胚圖檔名
-       const imgs = [...document.querySelectorAll('main img')]
-         .filter(i => i.alt !== UPLOADED)                  // 先排除自己剛上傳的原圖（見下方 ⚠️）
-         .filter(i => /輸出圖像|已產生圖像|cropped|translated|_zh|繁體/.test(i.alt));  // 認三種成品 alt（含檔案卡檔名）
-       const img = imgs.at(-1);                            // GPT 常迭代多版，取最後一張
+       // 主判準＝排除本回合上傳圖後取最後一張候選；關鍵字只降為「輔助優選」（成品檔名每次不同、白名單追不完，漏一個變體會整張抓不到還誤報還沒好）
+       const cands = [...document.querySelectorAll('main img')].filter(i => i.alt && i.alt !== UPLOADED);  // 排除自己剛上傳的原圖（見下方 ⚠️）
+       const hit = cands.filter(i => /輸出圖像|已產生圖像|cropped|translated|_zh|繁體/.test(i.alt));
+       const img = (hit.length ? hit : cands).at(-1);       // 命中關鍵字用命中的最後一張、否則退回全部候選的最後一張
        if (!img) return 'NOT_READY';                       // 還在生成／只剩檔案卡，下一輪再探或點檔案卡
        const blob = await (await fetch(img.src)).blob();
        const a = document.createElement('a');
@@ -164,7 +164,7 @@ PY
        return 'OK ' + img.naturalWidth + 'x' + img.naturalHeight;
      }
      ```
-     - ⚠️ **收成前一定要先排除「本回合剛上傳的原圖」**（範本的 `UPLOADED`）：filter 掃的是全部 `main img`、**含你剛上傳那張**；若成品還沒生好、而上傳圖檔名剛好命中 `cropped`／`_zh` 等關鍵字，`imgs.at(-1)` 會回傳**上傳圖**、函式照樣回報 `OK`，於是**靜默把原圖當成品存下去**（§5C 尤危險：譯圖會存成與原圖一模一樣、無錯誤訊息）。上傳圖的 alt＝你上傳的檔名——別靠命名慣例擋，要在候選裡明確排除它。
+     - ⚠️ **收成前一定要先排除「本回合剛上傳的原圖」**（範本的 `UPLOADED`）：候選掃的是全部 `main img`、**含你剛上傳那張**；沒排除的話、成品又還沒生好時，上傳圖會變成**唯一候選**被 `at(-1)` 取走、函式照樣回報 `OK`，於是**靜默把原圖當成品存下去**（§5C 尤危險：譯圖會存成與原圖一模一樣、無錯誤訊息）。上傳圖的 alt＝你上傳的檔名——別靠命名慣例擋，要在候選裡明確排除它。
      - **落點別預設**：Playwright **不一定**攔得到 `.browser/out/`（實測常沒攔到、`a.download` 落到瀏覽器預設下載夾如 `~/Downloads`；檔名底線 `_` 是否被改寫也視環境而定）。→ 下載後**實際 `ls` 找檔**：先看 `.browser/out/`、沒有再看瀏覽器下載夾，找到就用 **`mv`**（不是 `cp`）搬到 `…/images/figX-Y.png`，**別在下載夾留檔**（使用者要求圖檔別堆在下載夾）。
      - ⚠️ **同一台 Chrome 連續下載可能被 Chrome 攔阻**（「同站短時間下載多檔」的保護；**門檻視 Chrome 版本／設定而定、別當固定張數**）。**觸發依據是「下載這條路失敗」**（`mv` 前在 `.browser/out/` 與瀏覽器下載夾都 `ls` 不到剛下載的檔），不是去數張數；一旦失敗就改**不經下載夾**收成，但**別用 `browser_evaluate` 的回傳值把 base64 帶回來**（一張 700KB PNG≈95 萬字元，會塞爆 context、還可能被截斷）。正解：
        - ① evaluate 內 `fetch(img.src)`→blob→轉 base64，`return` 那串 base64；
@@ -229,10 +229,23 @@ PY
 - ⚠️ **看板用 marked.js 核心版**：**不支援 markdown 註腳**（`[^1]`／`[^1]: …` 會原樣噴出來、爆版）。原書的頁尾註腳要改寫成——文中標「（注 N）」＋該段後面放 blockquote `> **注 N**：…`。（表格、`$ $`／`$$ $$` 數學是支援的。）
 - ✅ **本文也要「渲染驗收」（和 §5B 驗圖對等，別組完就交）**：圖會逐張回讀，本文同樣不能只組完就算數——要確認在看板上**真的長對**：
   - **靜態掃**：`grep` 產出的 ipynb 有沒有 marked 不吃的語法（最常見 `[^` 註腳；見上一條）。
-  - **看渲染（CDP）**：開 `http://localhost:5050`。**最穩的驗法是在頁面 context 跑看板自己的 `renderIpynb(doc, base)`（它是 app.js 的全域函式），再驗產出的 DOM**——數：`[^` 註腳（應 0）、漏出的 `$`（應 0，數學都被 KaTeX 接走）、`.katex`／`table`／`img` 數量對不對。比硬截圖可靠——**文件很長時（渲染後常達上萬 px）headless Chrome 會把深處內容截成全黑**（是截圖壓縮的限制、不是內容問題；頁頂截得到、往下截不到），所以用 DOM 檢查、別只靠截圖。沒 CDP 就請使用者幫看一眼。**「組完 ipynb」≠「顯示正確」——這步專抓 marked 不吃的語法、數學沒被 KaTeX 接到、圖斷鏈等。**
+  - **看渲染（CDP）**：開 `http://localhost:5050`，在頁面 context 跑看板的全域函式 `renderIpynb(text, base)` 再驗產出的 DOM（比截圖可靠——文件很長時 headless 截圖深處會全黑）。⚠️ **第一參數吃「ipynb 原始 JSON 字串」、不是 parse 過的物件**——傳物件會回『（無法解析的 ipynb）』佔位**且不報錯**，最容易被誤判成產物壞掉。最小可跑片段（填 `id`／`ch`；驗筆記把 `kind` 改 `'note'`）：
+    ```js
+    const id = '<書資料夾名>', lang = 'zh_tw', ch = 'ch3', kind = 'text';
+    const q = new URLSearchParams({ lang, fmt: 'ipynb', ch, kind });
+    const text = await (await fetch(`/api/books/${encodeURIComponent(id)}/doc?${q}`)).text();  // ← 原始 JSON 字串，別 JSON.parse
+    const dir = kind === 'note' ? `${lang}/ipynb/note/${ch}` : `${lang}/ipynb/${ch}`;
+    const base = `/api/books/${encodeURIComponent(id)}/output/${dir}/`;
+    const d = document.createElement('div'); d.innerHTML = renderIpynb(text, base);
+    console.log('katex', d.querySelectorAll('.katex').length, 'table', d.querySelectorAll('table').length,
+                'img', d.querySelectorAll('img').length,
+                'footnote殘', (d.textContent.match(/\[\^/g) || []).length,   // 應 0
+                'dollar殘', (d.textContent.match(/\$/g) || []).length);       // 應 0（數學都被 KaTeX 接走）
+    ```
+    沒 CDP 就請使用者幫看一眼。**「組完 ipynb」≠「顯示正確」——這步專抓 marked 不吃的語法（如 `[^` 註腳）、數學沒被 KaTeX 接到、圖斷鏈等。**
 
 ## 7. 重點筆記（note）
-整章一檔（跟本文一樣 ipynb）→ `…/ipynb/note/ch<n>/ch<n>.ipynb`；每節的重點**對齊書的節次**收好（放在該重點所屬的小節，`tutor` 之後才好補進同一節）。note 是 ipynb，需要時可放**可跑的 code cell** 演示概念（不附預先算好的 outputs；看板只顯示、不執行，讀者在 Jupyter 跑才出圖）。
+整章一檔（跟本文一樣 ipynb）→ `…/ipynb/note/ch<n>/ch<n>.ipynb`；每節的重點**對齊書的節次**收好（放在該重點所屬的小節，`tutor` 之後才好補進同一節）。note 是 ipynb，需要時可放**可跑的 code cell** 演示概念（不附預先算好的 outputs；看板只顯示、不執行，讀者在 Jupyter 跑才出圖）。長章節筆記同樣適用〈注意〉段的「逐節 md → 最後組裝」（md→ipynb 的切割邏輯與本文共用、進度也落地）。
 
 > 📝 **每則 note「寫什麼、用什麼結構、什麼切角」＝完全照使用者專案根的 `note-style.md`。** 權責劃分：note 風格是**使用者的個人偏好、由 `note-style.md` 定義**；skill 只負責「讀懂書 → 照 `note-style.md` 寫 → 放對小節」，**格式一律不寫死**。
 >
