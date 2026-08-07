@@ -96,10 +96,10 @@ def _scan_output(book_id):
     return tree
 
 
-DEFAULT_CONFIG = {"schema_version": 1, "mode": "ipynb", "image_model": "chatgpt", "task": "translate",
+DEFAULT_CONFIG = {"schema_version": 1, "mode": "ipynb", "image_model": "codex", "task": "translate",
                   "title": "", "author": "", "cover": None}  # title/author/cover 由 digitize-book 從書的前幾頁抽出後填
 VALID_MODE = ("md", "ipynb")
-VALID_IMAGE_MODEL = ("claude_code", "chatgpt")
+VALID_IMAGE_MODEL = ("claude_code", "chatgpt", "codex")
 VALID_TASK = ("translate", "transcribe")  # translate=翻成繁中；transcribe=原文照錄、純數位化
 
 _PROGRESS_TEMPLATE = """# {name} — 處理進度
@@ -220,7 +220,7 @@ def api_book(book_id):
 
 @app.route("/api/books/<book_id>/config", methods=["GET", "PUT"])
 def api_config(book_id):
-    """讀／改每本書設定：mode=md|ipynb、image_model=claude_code|chatgpt、task=translate|transcribe。"""
+    """讀／改每本書設定：mode=md|ipynb、image_model=codex|chatgpt、task=translate|transcribe。"""
     if _safe_name(book_id) is None or not os.path.isdir(_book_path(book_id)):
         return jsonify({"error": "找不到該書"}), 404
     cfg = _read_config(book_id)

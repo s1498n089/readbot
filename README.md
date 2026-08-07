@@ -48,7 +48,7 @@
 ```
 book/<書>/
   src/                              原始 PDF，或分章照片 ch1/ ch2/…（看板不顯示）
-  config.json                       每本書設定（task=翻譯/數位化 ＋ 書卡：title/author/cover；mode／image_model 為保留欄位）
+  config.json                       每本書設定（task=翻譯/數位化、image_model=截圖做法 codex/chatgpt ＋ 書卡 title/author/cover；mode 為保留欄位）
   progress.md                       進度（口語記錄）
   output/cover.png                  封面圖（書卡 icon，抽自書第 1 頁）
   output/zh_tw/ipynb/ch3/ch3.ipynb       本文（翻譯或數位化）
@@ -59,7 +59,7 @@ book/<書>/
 
 ### `config.json` schema
 
-每本書一份；缺檔／缺欄／非法值都安全——server 讀取時自動補預設、正規化（`_read_config`），手動編輯壞了也不會掛。**目前實際支援的值如下表**（`mode`／`image_model` 是保留欄位——`server.py` 的 `VALID_*` 為相容仍收舊值，但功能上只走下表）。
+每本書一份；缺檔／缺欄／非法值都安全——server 讀取時自動補預設、正規化（`_read_config`），手動編輯壞了也不會掛。**目前實際支援的值如下表**（`mode` 仍是保留欄位；`image_model` 已實際生效、決定截圖做法。`server.py` 的 `VALID_*` 另收相容用的舊值 `claude_code`）。
 
 | 欄位 | 型別 | 目前支援值 | 預設 | 誰寫入 |
 |---|---|---|---|---|
@@ -67,7 +67,7 @@ book/<書>/
 | `title`／`author` | str | 自由字串 | `""` | digitize-book（抽自書的前幾頁） |
 | `cover` | str \| null | 檔名（相對 `output/`） | `null` | digitize-book（通常 `"cover.png"`） |
 | `mode` | str | 只 `"ipynb"` | `"ipynb"` | 保留欄位：UI 不開放、skill 一律 ipynb（留給未來擴充格式） |
-| `image_model` | str | 只 `"chatgpt"` | `"chatgpt"` | 保留欄位：UI 不開放、skill 一律 ChatGPT（留給未來換生圖模型） |
+| `image_model` | str | `"codex"` \| `"chatgpt"` | `"codex"` | digitize-book §5 截圖做法：`codex`＝本機 Python／PIL（預設、像素忠實）、`chatgpt`＝CDP 操 ChatGPT |
 | `schema_version` | int | `1` | `1` | server 自動補（保留給未來遷移） |
 
 ### 個人風格檔（專案根）
