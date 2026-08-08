@@ -105,6 +105,7 @@ uv run --project <readbot 根> python <readbot 根>/server.py --book-dir <書庫
 | `--book-dir` | 書庫目錄（其下一本書一個資料夾） | `<cwd>/book`；也可用 `BOOK_DIR` 環境變數 |
 | `--port` | 服務 port | `5050`；也可用 `PORT` 環境變數（預設避開 macOS AirPlay 佔用的 5000） |
 | `--reload` | 開發用：改 `server.py` 存檔就自動重啟 | 關閉 |
+| `--host` | 綁定位址 | `127.0.0.1`（只本機）；設 `0.0.0.0` 讓同區網／手機連——⚠️ 會把整個 plugin 目錄與無認證的管理端點暴露給區網，只在信任的網路用 |
 
 （平常用 `/readbot:serve` 開看板即可，這段是要手動跑或除錯時用。）
 

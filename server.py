@@ -309,13 +309,18 @@ if __name__ == "__main__":
     # 預設 5050：macOS 的 AirPlay 接收器佔 5000，避開它（可用 --port 或 PORT 環境變數覆寫）
     ap.add_argument("--port", type=int, default=int(os.environ.get("PORT", 5050)))
     ap.add_argument("--reload", action="store_true", help="開發用：改 server.py 存檔就自動重啟（仍 debug=False）")
+    ap.add_argument("--host", default="127.0.0.1",
+                    help="綁定位址，預設 127.0.0.1（只本機）。設 0.0.0.0 可讓同區網／手機連——"
+                         "⚠️ 會把整個 plugin 目錄與無認證的管理端點（建／改／刪書）暴露給同區網，只在信任的網路用")
     args = ap.parse_args()
     if args.book_dir:
         BOOK_DIR = args.book_dir
     print(f"\nReadbot server 執行中：http://localhost:{args.port}", flush=True)
+    if args.host not in ("127.0.0.1", "localhost"):
+        print(f"⚠️ 已綁 {args.host}（同區網可連）——手機請用本機區網 IP:{args.port}；只在信任的網路開", flush=True)
     print(f"書庫目錄：{BOOK_DIR}\n", flush=True)
     try:
-        app.run(host="127.0.0.1", port=args.port, debug=False, threaded=True, use_reloader=args.reload)
+        app.run(host=args.host, port=args.port, debug=False, threaded=True, use_reloader=args.reload)
     except OSError as e:
         print(f"\n啟動失敗：port {args.port} 無法綁定（{e}），請改用 --port 指定別的 port。", flush=True)
         sys.exit(1)
