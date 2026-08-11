@@ -7,9 +7,11 @@ description: 安裝/設定 Readbot（讀書機器人）的執行環境：經套�
 
 把 Readbot 的執行環境一次備好。**會安裝軟體**，每個安裝動作前先簡短告知使用者、徵得同意再跑。
 
-> 兩塊環境都要備好：
+> 要備的環境：
 > - **看板**（`/readbot:serve`）：只需要 **uv** 與專案相依（步驟 3b、4）。
-> - **CDP 瀏覽器 ＋ Playwright MCP**（步驟 3c、5、6）：讀書機器人的**核心管道**。`digitize-book` 的預設截圖就是透過內建 Playwright MCP、用 CDP 接管一台**使用者已登入**的 Chrome 去操作 ChatGPT 裁圖／生譯圖。（MCP 已宣告在 `.mcp.json`、隨安裝自動註冊。）
+> - **截圖**：依書的 `image_model` 分兩條——**`codex`（預設）**只需本機有 Codex CLI 並登入（見下方「🔎 檢查 codex」）；**`chatgpt`** 才需要 CDP 瀏覽器＋Playwright MCP（步驟 3c、5、6）接管一台**已登入**的 Chrome 操作 ChatGPT（MCP 已宣告在 `.mcp.json`、隨安裝自動註冊）。
+>
+> 🔎 **檢查 codex（不代裝、只檢查＋提醒）**：跑 `command -v codex`＋`codex login status`。有且已登入→好；**缺或沒登入→提醒使用者**——預設的 codex 截圖分支需自己裝 Codex CLI 並 `codex login`（本 skill 不代裝），或把書的 `image_model` 設成 `chatgpt`、改走下面步驟 5、6 的 CDP。
 
 ## 步驟
 
@@ -82,8 +84,8 @@ uv sync --project "<PLUGIN_DIR>"
 ```
 做完這步就能跑 `/readbot:serve` 開看板了。
 
-### 5. 備 CDP 瀏覽器（讀書機器人的核心管道）
-讀書機器人靠 plugin **內建的 Playwright MCP**（`.mcp.json` 隨安裝自動註冊）透過 CDP 接管一台**使用者已登入**的 Chrome——`digitize-book` 預設用它操作 ChatGPT 裁圖／生譯圖。MCP 不用另外建，但那台 Chrome 要本機備好：
+### 5. 備 CDP 瀏覽器（`image_model=chatgpt` 才需要）
+（**只有 `image_model=chatgpt` 才做這步、預設的 codex 分支跳過。**）plugin **內建的 Playwright MCP**（`.mcp.json` 隨安裝自動註冊）透過 CDP 接管一台**使用者已登入**的 Chrome，`chatgpt` 分支用它操作 ChatGPT 裁圖／生譯圖。MCP 不用另外建，但那台 Chrome 要本機備好：
 
 1. **把啟動腳本放進「使用者專案」的 `.browser/`**（登入態是使用者資產、不放 plugin 內）：
    ```bash
@@ -143,4 +145,4 @@ PY
 ### 7. 回報
 環境就緒。接著可：
 - `/readbot:serve` —— 開看板檢視／新增／編輯／刪除項目。
-- `/readbot:digitize-book` —— 數位化／翻譯書籍；其預設截圖會用到步驟 5、6 備好的 CDP 瀏覽器與工具權限。
+- `/readbot:digitize-book` —— 數位化／翻譯書籍；截圖依書的 `image_model`：預設 `codex` 用本機 codex（見開頭「🔎 檢查 codex」）、`chatgpt` 才用步驟 5、6 的 CDP 與工具權限。

@@ -4,8 +4,7 @@
 > **共用的部分不在這裡、在主 `SKILL.md §5`**：裁切的 4 條合格標準、§5B 回讀驗收、§5C 的「要不要生／命名／文字專項驗收」。本檔只講「怎麼驅動 codex」。文中 `§5`／`§5B`／`§5C` 指主 SKILL.md 的對應節；`<PLUGIN_DIR>` 是主 §0 推出的 plugin 根。
 
 ## 前提
-- **Codex CLI 已裝、且登入**：`codex login status` 應回「Logged in using ChatGPT」（或 API key）。沒登入就停下、請使用者跑 `codex login`（見 `/readbot:setup`）。
-- **有 uv**：codex 產出圖靠 Pillow，Pillow 已在 plugin venv（`uv sync` 就有）。
+- **Codex CLI 已裝且登入**（主 §1 開頭已檢查、缺會停）；**有 uv**——Pillow 已在 plugin venv（`uv sync` 就有）。
 
 ## 怎麼驅動 codex（裁切、生譯圖共用）
 一張圖 = 一次 `codex exec`。用 **Bash** 跑（前景、`timeout` 給大一點，`max` reasoning 一張常要 1~5 分鐘；或 `run_in_background`）：

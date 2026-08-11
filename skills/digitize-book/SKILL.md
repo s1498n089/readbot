@@ -21,7 +21,7 @@ description: 把 book/<書>/src 裡的書（PDF 或分章照片）用多模態�
 - **哪本書** → 對到 `book/<書>/`。沒有就**教使用者自己建**（別代為 `mkdir`）：用看板「＋ 新增書」建好書骨架，再把 PDF／照片放進 `book/<書>/src/`，然後回來找 Claude 接續。
 - **讀 `book/<書>/config.json`** → 拿設定當預設，不必每次重問使用者（檔案不存在＝全部視同預設值，可順手建立；schema 見 README「資料模型」）：
   - **`task`**：`translate`（翻成繁中，預設）或 `transcribe`（**原文照錄、純數位化**——繁中書用這個，書上印什麼就打什麼、不翻不改）。使用者當下若有明講，以使用者為準（Claude 可順手打看板 `PUT /api/books/<書>/config` 同步回 config.json）。
-  - **`image_model`**：`codex`（預設，本機 Python／PIL 直接裁切／疊字）或 `chatgpt`（CDP 接管 ChatGPT）——**決定 §5 截圖走哪條做法檔、開工前要讀**。`mode` 仍是**保留欄位**（目前一律 `ipynb`）。
+  - **`image_model`**：`codex`（預設，本機 Python／PIL 直接裁切／疊字）或 `chatgpt`（CDP 接管 ChatGPT）——**決定 §5 截圖走哪條做法檔、開工前要讀**。⚠️ **是 `codex` 就先確認本機 codex 在＋已登入**（`command -v codex`＋`codex login status`）；**缺就停下報錯**、請使用者把 `image_model` 改成 `chatgpt`（看板切換鈕／PUT config）或裝好 codex 再來。`mode` 仍是**保留欄位**（目前一律 `ipynb`）。
 - **讀 `book/<書>/progress.md`** → 看這本翻到哪了（口語記錄，**未提及＝未作業**），決定這次從哪接續、翻哪幾章。
 - **來源型態** → 看 `src/`：是 PDF（`*.pdf`）還是**分章照片**（`src/ch1/`、`src/ch2/`…）。
 - **範圍** → 哪幾章。**預設逐章**（一次一章，整本太大）；參考 progress.md 接續。
