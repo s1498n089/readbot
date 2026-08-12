@@ -44,7 +44,7 @@ Lint/format：`uv run ruff format .`、`uv run ruff check --fix .`（手動跑�
 
 - **shell 動作走 Bash 工具**；包內 python 一律 `uv run --project "<PLUGIN_DIR>"`（plugin venv 才有 pymupdf/pillow）。
 - 指令別用 `cd xxx && uv run …` 開頭（不符 `Bash(uv run:*)` 會跳框）；Bash cwd 已是專案根，直接 `uv run …` + 相對路徑。
-- 破壞性指令（`rm`、`taskkill`）刻意不預核准，每次先問過使用者再做。
+- 破壞性指令（`rm`、`taskkill`）**預設先問過使用者再做**。**例外**：收尾清理**自己剛產生、可重建的過程檔**（`tmp/` 逐頁圖／裁切疊字腳本／驗收預覽圖等）＝自己判斷清、清完**回報「清了什麼／留了什麼」**、不必逐項問。判準是**清理對象可不可重建、有沒有別的作業在用**（不是「指令危不危險」）——不可重建、或有跡象別的作業在用（含 `taskkill` 殺進程）就仍先問。
 - 🚨 **暫存檔別丟 project root**：PDF 逐頁圖等過程檔 → `tmp/`；瀏覽器流程暫存 → `.browser/tmp/`（都已 gitignore）。收工前清掉、確認 root 乾淨再向使用者回報。
 
 ## 重要 gotchas（勿誤改）
